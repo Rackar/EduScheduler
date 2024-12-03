@@ -1,10 +1,20 @@
 class SchedulingAlgorithm {
-  constructor(teachers, courses, classrooms, classes, timeSlots) {
+  constructor(
+    teachers,
+    courses,
+    classrooms,
+    startWeek,
+    endWeek,
+    priority,
+    considerClassroom = false
+  ) {
     this.teachers = teachers;
     this.courses = courses;
     this.classrooms = classrooms;
-    this.classes = classes;
-    this.timeSlots = timeSlots;
+    this.startWeek = startWeek;
+    this.endWeek = endWeek;
+    this.priority = priority;
+    this.considerClassroom = considerClassroom;
 
     // 遗传算法参数
     this.populationSize = 100; // 种群大小
@@ -26,41 +36,85 @@ class SchedulingAlgorithm {
   // 生成随机课程表
   generateRandomSchedule() {
     const schedule = [];
+    const teacherTimeSlots = new Map(); // 用于跟踪教师已用时间段
 
-    // 为每个班级安排课程
-    for (const classObj of this.classes) {
-      const classSchedule = {
-        classId: classObj._id,
-        arrangements: [],
-      };
+    // 为每个课程安排时间
+    for (const course of this.courses) {
+      // 获取课程的教师
+      const teacher = course.teacher;
+      if (!teacher) continue;
 
-      // 获取该班级需要上的课程
-      const requiredCourses = this.courses.slice(0, 5); // 假设每个班级需要5门课
-
-      const usedTimeSlots = new Map(); // 用于跟踪已使用的时间段
-
-      for (const course of requiredCourses) {
-        // 随机选择教室和时间段
-        const classroom = this.getRandomClassroom(classObj.studentCount);
-        let timeSlot;
-        let dayOfWeek;
-        do {
-          timeSlot = this.getRandomTimeSlot();
-          dayOfWeek = Math.floor(Math.random() * 5) + 1;
-        } while (usedTimeSlots.has(`${dayOfWeek}-${timeSlot}`)); // 确保不重复使用时间段
-
-        usedTimeSlots.set(`${dayOfWeek}-${timeSlot}`, true);
-
-        classSchedule.arrangements.push({
-          courseId: course._id,
-          teacherId: course.teacher,
-          classroomId: classroom._id,
-          dayOfWeek,
-          timeSlot,
-        });
+      // 初始化教师的时间槽记录
+      if (!teacherTimeSlots.has(teacher._id.toString())) {
+        teacherTimeSlots.set(teacher._id.toString(), new Set());
       }
 
-      schedule.push(classSchedule);
+      // 获取课程的实际周次范围
+      const courseStartWeek = Math.max(
+        this.startWeek,
+        course.weeks?.start || this.startWeek
+      );
+      const courseEndWeek = Math.min(
+        this.endWeek,
+        course.weeks?.end || this.endWeek
+      );
+
+      // 如果课程的周次范围不在排课范围内，跳过
+      if (courseStartWeek > courseEndWeek) {
+        console.warn(
+          `课程 ${course.name} 的周次范围 (${course.weeks?.start}-${course.weeks?.end}) 不在排课范围内 (${this.startWeek}-${this.endWeek})`
+        );
+        continue;
+      }
+
+      // 为这门课程在其周次范围内安排时间
+      let timeSlot, dayOfWeek;
+      let attempts = 0;
+      const maxAttempts = 50;
+
+      // 尝试找到可用的时间段
+      do {
+        dayOfWeek = Math.floor(Math.random() * 5) + 1; // 1-5 代表周一到周五
+        timeSlot = this.getRandomTimeSlot();
+        attempts++;
+
+        // 检查教师在这些周次的时间段是否都可用
+        const isTimeSlotAvailable = !Array.from(
+          { length: courseEndWeek - courseStartWeek + 1 },
+          (_, i) => courseStartWeek + i
+        ).some((week) => {
+          const timeKey = `${week}-${dayOfWeek}-${timeSlot}`;
+          return teacherTimeSlots.get(teacher._id.toString()).has(timeKey);
+        });
+
+        if (isTimeSlotAvailable) {
+          // 标记这些周次的时间段为已使用
+          for (let week = courseStartWeek; week <= courseEndWeek; week++) {
+            const timeKey = `${week}-${dayOfWeek}-${timeSlot}`;
+            teacherTimeSlots.get(teacher._id.toString()).add(timeKey);
+          }
+          break;
+        }
+      } while (attempts < maxAttempts);
+
+      if (attempts >= maxAttempts) {
+        console.warn("无法为课程找到合适的时间段:", course.name);
+        continue;
+      }
+
+      // 为每个周次创建课程安排
+      for (let week = courseStartWeek; week <= courseEndWeek; week++) {
+        schedule.push({
+          week,
+          day: this.getDayName(dayOfWeek),
+          timeSlot,
+          course: course._id,
+          teacher: teacher._id,
+          ...(this.considerClassroom && {
+            classroom: this.getRandomClassroom(course.studentCount)?._id,
+          }),
+        });
+      }
     }
 
     return schedule;
@@ -69,45 +123,54 @@ class SchedulingAlgorithm {
   // 适应度评估
   evaluateFitness(schedule) {
     let fitness = 100; // 起始适应度
-    const conflicts = this.checkConflicts(schedule);
-    const workloadViolations = this.checkTeacherWorkload(schedule);
 
-    // 每个冲突扣分
-    fitness -= conflicts * 10;
-    // 每个工作量违规扣分
+    // 检查教师时间冲突
+    const teacherConflicts = this.checkTeacherConflicts(schedule);
+    fitness -= teacherConflicts * 10;
+
+    // 只在需要时检查教室冲突
+    if (this.considerClassroom) {
+      const classroomConflicts = this.checkClassroomConflicts(schedule);
+      fitness -= classroomConflicts * 10;
+    }
+
+    // 检查教师工作量
+    const workloadViolations = this.checkTeacherWorkload(schedule);
     fitness -= workloadViolations * 5;
 
     return Math.max(0, fitness);
   }
 
-  // 检查时间冲突
-  checkConflicts(schedule) {
+  // 检查教师时间冲突
+  checkTeacherConflicts(schedule) {
     let conflicts = 0;
-
-    // 检查教室冲突
-    const classroomBookings = new Map();
-
-    for (const classSchedule of schedule) {
-      for (const arr of classSchedule.arrangements) {
-        const key = `${arr.classroomId}-${arr.dayOfWeek}-${arr.timeSlot}`;
-        if (classroomBookings.has(key)) {
-          conflicts++;
-        }
-        classroomBookings.set(key, true);
-      }
-    }
-
-    // 检查教师冲突
     const teacherBookings = new Map();
 
-    for (const classSchedule of schedule) {
-      for (const arr of classSchedule.arrangements) {
-        const key = `${arr.teacherId}-${arr.dayOfWeek}-${arr.timeSlot}`;
-        if (teacherBookings.has(key)) {
-          conflicts++;
-        }
-        teacherBookings.set(key, true);
+    for (const item of schedule) {
+      const key = `${item.teacher}-${item.week}-${item.day}-${item.timeSlot}`;
+      if (teacherBookings.has(key)) {
+        conflicts++;
       }
+      teacherBookings.set(key, true);
+    }
+
+    return conflicts;
+  }
+
+  // 检查教室时间冲突
+  checkClassroomConflicts(schedule) {
+    if (!this.considerClassroom) return 0;
+
+    let conflicts = 0;
+    const classroomBookings = new Map();
+
+    for (const item of schedule) {
+      if (!item.classroom) continue;
+      const key = `${item.classroom}-${item.week}-${item.day}-${item.timeSlot}`;
+      if (classroomBookings.has(key)) {
+        conflicts++;
+      }
+      classroomBookings.set(key, true);
     }
 
     return conflicts;
@@ -119,20 +182,21 @@ class SchedulingAlgorithm {
     let violations = 0;
 
     // 统计每个教师的工作量
-    for (const classSchedule of schedule) {
-      for (const arr of classSchedule.arrangements) {
-        const hours = teacherHours.get(arr.teacherId) || 0;
-        const course = this.courses.find((c) => c._id.equals(arr.courseId));
-        teacherHours.set(arr.teacherId, hours + (course ? course.hours : 0));
-      }
+    for (const item of schedule) {
+      const hours = teacherHours.get(item.teacher.toString()) || 0;
+      const course = this.courses.find((c) => c._id.equals(item.course));
+      teacherHours.set(
+        item.teacher.toString(),
+        hours + (course ? course.hours : 0)
+      );
     }
 
     // 检查是否违反工作量限制
     for (const teacher of this.teachers) {
-      const hours = teacherHours.get(teacher._id) || 0;
+      const hours = teacherHours.get(teacher._id.toString()) || 0;
       if (
-        hours < teacher.teachingHours.min ||
-        hours > teacher.teachingHours.max
+        hours < teacher.teachingHours?.min ||
+        hours > teacher.teachingHours?.max
       ) {
         violations++;
       }
@@ -141,102 +205,31 @@ class SchedulingAlgorithm {
     return violations;
   }
 
-  // 选择父代
-  selection(population) {
-    // 计算适应度
-    const fitnessScores = population.map((schedule) => ({
-      schedule,
-      fitness: this.evaluateFitness(schedule),
-    }));
-
-    // 按适应度排序
-    fitnessScores.sort((a, b) => b.fitness - a.fitness);
-
-    // 保留精英个体
-    const newPopulation = fitnessScores
-      .slice(0, this.elitismCount)
-      .map((item) => item.schedule);
-
-    // 轮盘赌选择剩余个体
-    while (newPopulation.length < this.populationSize) {
-      const parent1 = this.rouletteWheelSelection(fitnessScores);
-      const parent2 = this.rouletteWheelSelection(fitnessScores);
-      const child = this.crossover(parent1, parent2);
-      if (Math.random() < this.mutationRate) {
-        this.mutate(child);
-      }
-      newPopulation.push(child);
-    }
-
-    return newPopulation;
+  // 获取随机时间段
+  getRandomTimeSlot() {
+    const slots = ["1-2", "3-4", "5-6", "7-8", "9-10"];
+    return slots[Math.floor(Math.random() * slots.length)];
   }
 
-  // 轮盘赌选择
-  rouletteWheelSelection(fitnessScores) {
-    const totalFitness = fitnessScores.reduce(
-      (sum, item) => sum + item.fitness,
-      0
-    );
-    let random = Math.random() * totalFitness;
-
-    for (const item of fitnessScores) {
-      random -= item.fitness;
-      if (random <= 0) {
-        return item.schedule;
-      }
-    }
-
-    return fitnessScores[0].schedule;
+  // 获取星期名称
+  getDayName(day) {
+    const days = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+    return days[day - 1];
   }
 
-  // 交叉操作
-  crossover(parent1, parent2) {
-    const child = [];
-
-    for (let i = 0; i < parent1.length; i++) {
-      if (Math.random() < 0.5) {
-        child.push({ ...parent1[i] });
-      } else {
-        child.push({ ...parent2[i] });
-      }
-    }
-
-    return child;
-  }
-
-  // 变异操作
-  mutate(schedule) {
-    const classIndex = Math.floor(Math.random() * schedule.length);
-    const arrangementIndex = Math.floor(
-      Math.random() * schedule[classIndex].arrangements.length
-    );
-
-    // 随机修改时间或教室
-    if (Math.random() < 0.5) {
-      schedule[classIndex].arrangements[arrangementIndex].timeSlot =
-        this.getRandomTimeSlot();
-    } else {
-      const classObj = this.classes.find((c) =>
-        c._id.equals(schedule[classIndex].classId)
-      );
-      schedule[classIndex].arrangements[arrangementIndex].classroomId =
-        this.getRandomClassroom(classObj.studentCount)._id;
-    }
-  }
-
-  // 获取随机合适的教室
+  // 获取随机教室
   getRandomClassroom(studentCount) {
+    if (!this.considerClassroom || !this.classrooms.length) return null;
+
     const suitableClassrooms = this.classrooms.filter(
-      (c) => c.capacity >= studentCount
+      (c) => c.capacity >= (studentCount || 0)
     );
+
+    if (!suitableClassrooms.length) return null;
+
     return suitableClassrooms[
       Math.floor(Math.random() * suitableClassrooms.length)
     ];
-  }
-
-  // 获取随机时间段
-  getRandomTimeSlot() {
-    return Math.floor(Math.random() * 8) + 1; // 假设每天8节课
   }
 
   // 运行遗传算法
@@ -246,69 +239,32 @@ class SchedulingAlgorithm {
     let bestFitness = -1;
 
     for (let generation = 0; generation < this.generations; generation++) {
-      population = this.selection(population);
+      // 评估适应度
+      const fitnessScores = population.map((schedule) => ({
+        schedule,
+        fitness: this.evaluateFitness(schedule),
+      }));
 
-      // 评估当前种群中的最佳解
-      for (const schedule of population) {
-        const fitness = this.evaluateFitness(schedule);
-        if (fitness > bestFitness) {
-          bestFitness = fitness;
-          bestSchedule = schedule;
-        }
+      // 找到最佳解
+      const currentBest = fitnessScores.reduce((best, current) =>
+        current.fitness > best.fitness ? current : best
+      );
+
+      if (currentBest.fitness > bestFitness) {
+        bestFitness = currentBest.fitness;
+        bestSchedule = currentBest.schedule;
       }
 
-      // 如果找到完美解，提前结束
-      if (bestFitness === 100) {
+      // 如果找到完美解或达到最大代数，则停止
+      if (bestFitness >= 100 || generation === this.generations - 1) {
         break;
       }
+
+      // 生成下一代
+      population = this.selection(fitnessScores);
     }
 
-    return this.convertScheduleToDBFormat(bestSchedule);
-  }
-
-  // 将排课结果转换为数据库格式
-  convertScheduleToDBFormat(schedule) {
-    const result = [];
-
-    for (const classSchedule of schedule) {
-      const classArrangements = {
-        classId: classSchedule.classId,
-        courses: [],
-      };
-
-      for (const arr of classSchedule.arrangements) {
-        classArrangements.courses.push({
-          course: arr.courseId,
-          classroom: arr.classroomId,
-          schedule: [
-            {
-              dayOfWeek: arr.dayOfWeek,
-              startTime: this.getTimeBySlot(arr.timeSlot).startTime,
-              endTime: this.getTimeBySlot(arr.timeSlot).endTime,
-            },
-          ],
-        });
-      }
-
-      result.push(classArrangements);
-    }
-
-    return result;
-  }
-
-  // 根据课节取具体时间
-  getTimeBySlot(slot) {
-    const timeSlots = {
-      1: { startTime: "08:00", endTime: "08:45" },
-      2: { startTime: "08:55", endTime: "09:40" },
-      3: { startTime: "10:00", endTime: "10:45" },
-      4: { startTime: "10:55", endTime: "11:40" },
-      5: { startTime: "14:00", endTime: "14:45" },
-      6: { startTime: "14:55", endTime: "15:40" },
-      7: { startTime: "16:00", endTime: "16:45" },
-      8: { startTime: "16:55", endTime: "17:40" },
-    };
-    return timeSlots[slot];
+    return bestSchedule;
   }
 }
 

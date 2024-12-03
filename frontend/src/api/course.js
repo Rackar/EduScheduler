@@ -42,3 +42,12 @@ export function deleteCourse(id) {
     method: "delete",
   });
 }
+
+// 批量导入课程
+export function batchImportCourses(data) {
+  return request({
+    url: "/api/courses/batch-import",
+    method: "post",
+    data,
+  });
+}

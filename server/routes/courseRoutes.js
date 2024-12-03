@@ -8,6 +8,9 @@ router.get("/", courseController.getAllCourses);
 // 创建新课程
 router.post("/", courseController.createCourse);
 
+// 批量导入课程
+router.post("/batch-import", courseController.batchImportCourses);
+
 // 更新课程信息
 router.put("/:id", courseController.updateCourse);
 

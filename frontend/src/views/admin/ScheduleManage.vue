@@ -66,11 +66,10 @@
                     {{ getScheduleItem(day.value, timeSlot.value).course.name }}
                   </div>
                   <div class="text-xs text-gray-600">
-                    {{ getScheduleItem(day.value, timeSlot.value).teacher.name }}
+                    {{ getScheduleItem(day.value, timeSlot.value).teacher.username }}
                   </div>
                   <div class="text-xs text-gray-600">
-                    {{ getScheduleItem(day.value, timeSlot.value).classroom.building }}
-                    {{ getScheduleItem(day.value, timeSlot.value).classroom.room }}
+                    {{ getClassroomInfo(getScheduleItem(day.value, timeSlot.value)) }}
                   </div>
                 </div>
               </template>
@@ -230,6 +229,13 @@
             <el-radio label="classroom">教室优先</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="教室分配">
+          <el-switch
+            v-model="autoScheduleForm.considerClassroom"
+            active-text="需要分配教室"
+            inactive-text="使用固定教室"
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="flex justify-end">
@@ -309,7 +315,7 @@ const form = ref({
 
 // 表单验证规则
 const rules = {
-  week: [{ required: true, message: '请选择周次', trigger: 'change' }],
+  week: [{ required: true, message: '请���择周次', trigger: 'change' }],
   day: [{ required: true, message: '请选择星期', trigger: 'change' }],
   timeSlot: [{ required: true, message: '请选择时间段', trigger: 'change' }],
   courseId: [{ required: true, message: '请选择课程', trigger: 'change' }],
@@ -331,7 +337,8 @@ const autoScheduleLoading = ref(false)
 const autoScheduleForm = ref({
   startWeek: 1,
   endWeek: 16,
-  priority: 'teacher'
+  priority: 'teacher',
+  considerClassroom: true
 })
 
 // 获取课表数据
@@ -535,4 +542,16 @@ watch(
 onMounted(() => {
   loadSchedule()
 })
+
+// 获取教室信息
+const getClassroomInfo = (scheduleItem) => {
+  if (scheduleItem.classroom) {
+    return `${scheduleItem.classroom.building}-${scheduleItem.classroom.room}`;
+  } else if (scheduleItem.fixedClassroom) {
+    return `${scheduleItem.fixedClassroom.building}-${scheduleItem.fixedClassroom.room}`;
+  } else if (scheduleItem.course.defaultClassroom) {
+    return `${scheduleItem.course.defaultClassroom.building}-${scheduleItem.course.defaultClassroom.room}`;
+  }
+  return '教室未分配';
+};
 </script> 

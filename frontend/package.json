@@ -17,7 +17,8 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
