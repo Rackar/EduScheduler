@@ -1,0 +1,81 @@
+<template>
+  <el-container class="h-screen">
+    <el-aside width="200px" class="bg-gray-800">
+      <div class="p-4 text-white text-xl font-bold">排课系统</div>
+      <el-menu
+        class="border-none"
+        background-color="#1F2937"
+        text-color="#fff"
+        active-text-color="#409EFF"
+        :router="true"
+        :default-active="route.path"
+      >
+        <el-menu-item index="/admin/teachers">
+          <el-icon><User /></el-icon>
+          <span>教师管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/courses">
+          <el-icon><Reading /></el-icon>
+          <span>课程管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/classrooms">
+          <el-icon><School /></el-icon>
+          <span>教室管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/schedule">
+          <el-icon><Calendar /></el-icon>
+          <span>排课管理</span>
+        </el-menu-item>
+      </el-menu>
+    </el-aside>
+    
+    <el-container>
+      <el-header class="bg-white border-b flex items-center justify-between px-4">
+        <div class="text-lg">{{ pageTitle }}</div>
+        <el-dropdown>
+          <span class="flex items-center cursor-pointer">
+            <el-avatar size="small" class="mr-2">管理员</el-avatar>
+            <span>管理员</span>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item>个人信息</el-dropdown-item>
+              <el-dropdown-item>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-header>
+      
+      <el-main class="bg-gray-100">
+        <router-view></router-view>
+      </el-main>
+    </el-container>
+  </el-container>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { User, Reading, School, Calendar } from '@element-plus/icons-vue'
+
+const route = useRoute()
+
+const pageTitle = computed(() => {
+  const pathMap = {
+    '/admin/teachers': '教师管理',
+    '/admin/courses': '课程管理',
+    '/admin/classrooms': '教室管理',
+    '/admin/schedule': '排课管理'
+  }
+  return pathMap[route.path] || '管理系统'
+})
+</script>
+
+<style scoped>
+.el-aside {
+  @apply border-r;
+}
+.el-header {
+  @apply h-16 leading-[4rem];
+}
+</style> 
