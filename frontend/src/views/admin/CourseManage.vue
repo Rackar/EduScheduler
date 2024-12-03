@@ -32,14 +32,20 @@
 
     <!-- 课程列表 -->
     <el-table :data="courses" v-loading="loading" border stripe>
-      <el-table-column prop="_id" label="ID" width="220" />
-      <el-table-column prop="name" label="课程名称" />
-      <el-table-column prop="code" label="课程代码" />
+      <el-table-column prop="className" label="班级" width="240" />
+      <el-table-column prop="code" label="课程代码" width="100" />
+      <el-table-column prop="name" label="课程名称" width="180" />
+
       <el-table-column prop="credit" label="学分" width="80" />
       <el-table-column prop="hours" label="课时" width="80" />
-      <el-table-column prop="type" label="课程类型" />
-      <el-table-column prop="department" label="开课院系" />
-      <el-table-column prop="teacherName" label="任课教师" />
+      <el-table-column prop="weeks" label="上课周次" width="100">
+        <template #default="{ row }">
+          {{ row.weeks.start }}-{{ row.weeks.end }}
+        </template>
+      </el-table-column>
+      <!-- <el-table-column prop="type" label="课程类型" />
+      <el-table-column prop="department" label="开课院系" /> -->
+      <el-table-column prop="teacherName" label="任课教师" width="100" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'info'">

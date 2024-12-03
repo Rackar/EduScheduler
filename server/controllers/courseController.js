@@ -281,12 +281,19 @@ exports.batchImportCourses = async (req, res) => {
           try {
             // 确保 weekInfo 是字符串
             const weekInfoStr = String(courseData.weekInfo).trim();
-            // 支持多种格式：2-16、2~16、第2-16周、2到16周等
-            const weekMatch = weekInfoStr.match(/(\d+)[-~到至](\d+)/);
+            console.log(`正在解析周次信息: "${weekInfoStr}"`);
+
+            // 移除所有空格
+            const cleanWeekInfo = weekInfoStr.replace(/\s+/g, "");
+
+            // 支持更多格式：2-16、2~16、第2-16周、2到16周、2至16周等
+            const weekMatch = cleanWeekInfo.match(/第?(\d+)[-~到至](\d+)周?/);
+            console.log("周次匹配结果:", weekMatch);
 
             if (weekMatch) {
               const start = parseInt(weekMatch[1]);
               const end = parseInt(weekMatch[2]);
+              console.log(`解析出的开始周: ${start}, 结束周: ${end}`);
 
               if (
                 !isNaN(start) &&
@@ -297,19 +304,23 @@ exports.batchImportCourses = async (req, res) => {
                 end <= 20
               ) {
                 weeks = { start, end };
+                console.log(`成功设置周次范围: ${start}-${end}`);
               } else {
                 console.warn(
-                  `课程 ${courseData.name} 的周次范围无效: ${weekInfoStr}，使用默认值`
+                  `课程 ${courseData.name} 的周次范围无效: ${weekInfoStr}，使用默认值 1-20`
                 );
               }
             } else {
               // 尝试解析单个数字（如果只有一个周）
-              const singleWeek = parseInt(weekInfoStr);
+              const singleWeek = parseInt(cleanWeekInfo.replace(/[^0-9]/g, ""));
+              console.log(`尝试解析单周: ${singleWeek}`);
+
               if (!isNaN(singleWeek) && singleWeek > 0 && singleWeek <= 20) {
                 weeks = { start: singleWeek, end: singleWeek };
+                console.log(`成功设置单周: ${singleWeek}`);
               } else {
                 console.warn(
-                  `课程 ${courseData.name} 的周次格式无效: ${weekInfoStr}，使用默认值`
+                  `课程 ${courseData.name} 的周次格式无效: ${weekInfoStr}，使用默认值 1-20`
                 );
               }
             }
