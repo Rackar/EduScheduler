@@ -22,6 +22,12 @@ export default {
 
     const isNew = computed(() => route.path.includes("/new"))
 
+    // 格式化时间为 HH:mm 格式
+    const formatTimeStr = (timeStr) => {
+      if (!timeStr) return ""
+      return timeStr.substring(0, 5)
+    }
+
     // 获取模板数据
     const fetchTemplate = async () => {
       if (!isNew.value) {
@@ -44,8 +50,8 @@ export default {
       template.value.periods[period].push({
         id: crypto.randomUUID(),
         name: "",
-        startTime: "",
-        endTime: "",
+        startTime: "08:00",
+        endTime: "08:45",
         creditHours: 1,
       })
     }
@@ -133,11 +139,12 @@ export default {
             </div>
             <div>
               <span class="text-sm">开始时间</span>
-              <el-time-picker v-model="slot.startTime" format="HH:mm" placeholder="选择时间" />
+              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" />
             </div>
             <div>
               <span class="text-sm">结束时间</span>
-              <el-time-picker v-model="slot.endTime" format="HH:mm" placeholder="选择时间" />
+              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
+                :min-time="slot.startTime" />
             </div>
             <div>
               <span class="text-sm">学时数</span>
@@ -169,11 +176,12 @@ export default {
             </div>
             <div>
               <span class="text-sm">开始时间</span>
-              <el-time-picker v-model="slot.startTime" format="HH:mm" placeholder="选择时间" />
+              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" />
             </div>
             <div>
               <span class="text-sm">结束时间</span>
-              <el-time-picker v-model="slot.endTime" format="HH:mm" placeholder="选择时间" />
+              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
+                :min-time="slot.startTime" />
             </div>
             <div>
               <span class="text-sm">学时数</span>
@@ -205,11 +213,12 @@ export default {
             </div>
             <div>
               <span class="text-sm">开始时间</span>
-              <el-time-picker v-model="slot.startTime" format="HH:mm" placeholder="选择时间" />
+              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" />
             </div>
             <div>
               <span class="text-sm">结束时间</span>
-              <el-time-picker v-model="slot.endTime" format="HH:mm" placeholder="选择时间" />
+              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
+                :min-time="slot.startTime" />
             </div>
             <div>
               <span class="text-sm">学时数</span>

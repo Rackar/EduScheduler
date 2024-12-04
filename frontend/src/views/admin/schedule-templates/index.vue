@@ -25,7 +25,8 @@ export default {
 
     // 编辑模板
     const editTemplate = (id) => {
-      router.push(`/admin/schedule-templates/edit/${id}`)
+      console.log("编辑模板:", id)
+      router.push(`/admin/schedule-templates/${id}/edit`)
     }
 
     // 删除模板

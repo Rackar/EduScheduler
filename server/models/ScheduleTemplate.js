@@ -74,4 +74,26 @@ scheduleTemplateSchema.pre("save", async function (next) {
   next();
 });
 
+// 添加 toJSON 转换
+scheduleTemplateSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    // 转换时段中的 _id
+    ["morning", "afternoon", "evening"].forEach((period) => {
+      if (ret.periods && ret.periods[period]) {
+        ret.periods[period] = ret.periods[period].map((slot) => ({
+          ...slot,
+          id: slot._id.toString(),
+          _id: undefined,
+        }));
+      }
+    });
+
+    return ret;
+  },
+});
+
 module.exports = mongoose.model("ScheduleTemplate", scheduleTemplateSchema);
