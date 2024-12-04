@@ -1,17 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/userController");
+const {
+  login,
+  getCurrentUser,
+  updateCurrentUser,
+  changePassword,
+} = require("../controllers/userController");
+const { protect } = require("../middleware/authMiddleware");
 
-// 用户注册
-router.post("/register", userController.registerUser);
+// 公开路由
+router.post("/login", login);
 
-// 用户登录
-router.post("/login", userController.loginUser);
-
-// 获取教师列表
-router.get("/teachers", userController.getTeachers);
-
-// 更新用户信息
-router.put("/:id", userController.updateUser);
+// 需要认证的路由
+router.use(protect);
+router.get("/me", getCurrentUser);
+router.put("/me", updateCurrentUser);
+router.put("/me/password", changePassword);
 
 module.exports = router;

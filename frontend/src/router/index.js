@@ -6,8 +6,15 @@ const routes = [
     redirect: "/admin",
   },
   {
+    path: "/login",
+    name: "Login",
+    component: () => import("../views/auth/Login.vue"),
+    meta: { requiresGuest: true },
+  },
+  {
     path: "/admin",
     component: () => import("../layouts/AdminLayout.vue"),
+    meta: { requiresAuth: true },
     children: [
       {
         path: "",
@@ -33,7 +40,38 @@ const routes = [
         name: "ScheduleManage",
         component: () => import("../views/admin/ScheduleManage.vue"),
       },
+      {
+        path: "schedule-templates",
+        name: "ScheduleTemplates",
+        component: () => import("../views/admin/schedule-templates/index.vue"),
+      },
+      {
+        path: "schedule-templates/new",
+        name: "NewScheduleTemplate",
+        component: () => import("../views/admin/schedule-templates/edit.vue"),
+      },
+      {
+        path: "schedule-templates/:id/edit",
+        name: "EditScheduleTemplate",
+        component: () => import("../views/admin/schedule-templates/edit.vue"),
+      },
+      {
+        path: "tenants",
+        name: "TenantManage",
+        component: () => import("../views/admin/tenants/index.vue"),
+        meta: { requiresSuperAdmin: true },
+      },
+      {
+        path: "profile",
+        name: "UserProfile",
+        component: () => import("../views/admin/UserProfile.vue"),
+      },
     ],
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "NotFound",
+    component: () => import("../views/error/404.vue"),
   },
 ];
 

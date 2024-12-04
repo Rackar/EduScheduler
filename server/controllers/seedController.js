@@ -1,77 +1,165 @@
-const seedData = require("../seedData");
+const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
-const Course = require("../models/Course");
-const Classroom = require("../models/Classroom");
-const Class = require("../models/Class");
-const TimeSlot = require("../models/TimeSlot");
+const School = require("../models/School");
+const Tenant = require("../models/Tenant");
+const ScheduleTemplate = require("../models/ScheduleTemplate");
 
-exports.initializeData = async (req, res) => {
+// @desc    初始化基础数据
+// @route   POST /api/seed/initialize
+// @access  Public
+const initializeData = asyncHandler(async (req, res) => {
+  // 检查是否已经初始化
+  const existingUser = await User.findOne();
+  if (existingUser) {
+    res.status(400);
+    throw new Error("数据已经初始化");
+  }
+
   try {
-    // 清空所有集合
-    await Promise.all([
-      User.deleteMany({}),
-      Course.deleteMany({}),
-      Classroom.deleteMany({}),
-      Class.deleteMany({}),
-      TimeSlot.deleteMany({}),
-    ]);
-
-    // 插入用户数据
-    const users = await User.create(seedData.users);
-
-    // 插入课程数据
-    const courses = await Course.create(seedData.courses);
-
-    // 将第一个课程分配给第一个教师
-    await Course.findByIdAndUpdate(courses[0]._id, {
-      teacher: users.find((u) => u.role === "teacher")._id,
-    });
-
-    // 插入教室数据
-    const classrooms = await Classroom.create(seedData.classrooms);
-
-    // 插入班级数据
-    const classesData = seedData.classes.map((classData) => ({
-      ...classData,
-      headTeacher: users.find((u) => u.role === "teacher")._id,
-    }));
-    const classes = await Class.create(classesData);
-
-    // 插入时间段数据
-    const timeSlots = await TimeSlot.create(seedData.timeSlots);
-
-    // 为第一个班级添加一个课程安排示例
-    await Class.findByIdAndUpdate(classes[0]._id, {
-      $push: {
-        courses: {
-          course: courses[0]._id,
-          classroom: classrooms[0]._id,
-          schedule: [
-            {
-              dayOfWeek: 1,
-              startTime: timeSlots[0].startTime,
-              endTime: timeSlots[0].endTime,
-            },
-          ],
-        },
+    // 创建示例租户
+    const tenant = await Tenant.create({
+      name: "示例学校",
+      code: "DEMO",
+      status: "active",
+      contact: {
+        name: "管理员",
+        email: "admin@example.com",
+        phone: "13800138000",
+      },
+      subscription: {
+        plan: "professional",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       },
     });
 
-    res.json({
-      message: "数据初始化成功",
-      summary: {
-        users: users.length,
-        courses: courses.length,
-        classrooms: classrooms.length,
-        classes: classes.length,
-        timeSlots: timeSlots.length,
+    // 创建示例学校
+    const school = await School.create({
+      tenant: tenant._id,
+      name: "示例分校",
+      code: "DEMO-001",
+      status: "active",
+      address: "示例地址",
+      contact: {
+        name: "校长",
+        phone: "13800138001",
+        email: "principal@example.com",
+      },
+      settings: {
+        academicYear: {
+          start: new Date(new Date().getFullYear(), 8, 1),
+          end: new Date(new Date().getFullYear() + 1, 6, 31),
+        },
+        terms: [
+          {
+            name: "第一学期",
+            start: new Date(new Date().getFullYear(), 8, 1),
+            end: new Date(new Date().getFullYear() + 1, 1, 15),
+          },
+          {
+            name: "第二学期",
+            start: new Date(new Date().getFullYear() + 1, 2, 1),
+            end: new Date(new Date().getFullYear() + 1, 6, 31),
+          },
+        ],
+      },
+    });
+
+    // 创建默认作息时间模板
+    const template = await ScheduleTemplate.create({
+      name: "默认作息时间",
+      description: "标准作息时间模板",
+      tenant: tenant._id,
+      school: school._id,
+      periods: {
+        morning: [
+          {
+            name: "第一节",
+            startTime: "08:00",
+            endTime: "08:45",
+            creditHours: 1,
+          },
+          {
+            name: "第二节",
+            startTime: "08:55",
+            endTime: "09:40",
+            creditHours: 1,
+          },
+          {
+            name: "第三节",
+            startTime: "10:00",
+            endTime: "10:45",
+            creditHours: 1,
+          },
+          {
+            name: "第四节",
+            startTime: "10:55",
+            endTime: "11:40",
+            creditHours: 1,
+          },
+        ],
+        afternoon: [
+          {
+            name: "第五节",
+            startTime: "14:00",
+            endTime: "14:45",
+            creditHours: 1,
+          },
+          {
+            name: "第六节",
+            startTime: "14:55",
+            endTime: "15:40",
+            creditHours: 1,
+          },
+          {
+            name: "第七节",
+            startTime: "16:00",
+            endTime: "16:45",
+            creditHours: 1,
+          },
+          {
+            name: "第八节",
+            startTime: "16:55",
+            endTime: "17:40",
+            creditHours: 1,
+          },
+        ],
+        evening: [
+          {
+            name: "第九节",
+            startTime: "19:00",
+            endTime: "19:45",
+            creditHours: 1,
+          },
+          {
+            name: "第十节",
+            startTime: "19:55",
+            endTime: "20:40",
+            creditHours: 1,
+          },
+        ],
+      },
+      isDefault: true,
+    });
+
+    // 更新学校的默认作息时间模板
+    school.settings.defaultScheduleTemplate = template._id;
+    await school.save();
+
+    res.status(201).json({
+      message: "基础数据初始化成功",
+      data: {
+        tenant,
+        school,
+        template,
       },
     });
   } catch (error) {
-    console.error("初始化数据失败:", error);
-    res.status(500).json({
-      message: "初始化数据失败",
-      error: error.message,
-    });
+    res.status(500);
+    throw new Error("初始化失败：" + error.message);
   }
+});
+
+module.exports = {
+  initializeData,
 };

@@ -3,6 +3,20 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
+    tenant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: function () {
+        return !this.roles.includes("super_admin");
+      },
+    },
+    school: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "School",
+      required: function () {
+        return !this.roles.includes("super_admin");
+      },
+    },
     username: {
       type: String,
       required: true,
@@ -12,37 +26,99 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    role: {
+    name: {
       type: String,
-      enum: ["superAdmin", "scheduler", "teacher", "student"],
       required: true,
     },
-    department: {
+    email: {
       type: String,
-      required: function () {
-        return this.role === "teacher";
-      },
+      required: true,
+      unique: true,
     },
-    teachingHours: {
-      current: { type: Number, default: 0 },
-      min: { type: Number, default: 14 },
-      max: { type: Number, default: 16 },
+    phone: String,
+    avatar: String,
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
-    courses: [
+    roles: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Course",
+        type: String,
+        enum: [
+          "super_admin",
+          "tenant_admin",
+          "school_admin",
+          "scheduler",
+          "teacher",
+          "student",
+        ],
+        required: true,
       },
     ],
+    profile: {
+      department: String,
+      title: String,
+      teachingHours: {
+        current: { type: Number, default: 0 },
+        min: { type: Number, default: 14 },
+        max: { type: Number, default: 16 },
+      },
+      courses: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+        },
+      ],
+    },
+    preferences: {
+      theme: {
+        type: String,
+        default: "light",
+      },
+      notifications: {
+        email: { type: Boolean, default: true },
+        web: { type: Boolean, default: true },
+      },
+    },
+    lastLogin: Date,
   },
   {
     timestamps: true,
   }
 );
 
+// 确保在同一租户下用户名唯一（排除超级管理员）
+userSchema.index(
+  { tenant: 1, username: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      tenant: { $exists: true },
+    },
+  }
+);
+
+// 确保在同一租户下邮箱唯一（排除超级管理员）
+userSchema.index(
+  { tenant: 1, email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      tenant: { $exists: true },
+    },
+  }
+);
+
 // 密码加密中间件
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // 如果密码没有修改，或者指定了跳过加密，则不进行加密
+  if (
+    !this.isModified("password") ||
+    this.$__.saveOptions?.skipPasswordHashing
+  ) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -53,9 +129,50 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// 验证密码的方法
+// 验证密码方法
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  console.log("\n=== 密码验证详情 ===");
+  console.log("输入的密码:", enteredPassword);
+  console.log("数据库中的密码哈希:", this.password);
+
+  try {
+    const isMatch = await bcrypt.compare(enteredPassword, this.password);
+    console.log("bcrypt.compare 结果:", isMatch);
+    return isMatch;
+  } catch (error) {
+    console.error("密码验证出错:", error);
+    return false;
+  }
+};
+
+// 检查是否是超级管理员
+userSchema.methods.isSuperAdmin = function () {
+  return this.roles.includes("super_admin");
+};
+
+// 检查是否是租户管理员
+userSchema.methods.isTenantAdmin = function () {
+  return this.roles.includes("tenant_admin");
+};
+
+// 检查是否是学校管理员
+userSchema.methods.isSchoolAdmin = function () {
+  return this.roles.includes("school_admin");
+};
+
+// 检查是否是排课管理员
+userSchema.methods.isScheduler = function () {
+  return this.roles.includes("scheduler");
+};
+
+// 检查是否是教师
+userSchema.methods.isTeacher = function () {
+  return this.roles.includes("teacher");
+};
+
+// 检查是否是学生
+userSchema.methods.isStudent = function () {
+  return this.roles.includes("student");
 };
 
 module.exports = mongoose.model("User", userSchema);
