@@ -16,7 +16,7 @@
         </el-radio-group>
       </div>
       <div class="flex space-x-2">
-        <el-button type="primary" @click="handleAutoSchedule">
+        <el-button type="primary" @click="autoScheduleVisible = true">
           <el-icon>
             <Plus />
           </el-icon>自动排课
@@ -161,33 +161,7 @@
     </el-dialog>
 
     <!-- 自动排课对话框 -->
-    <el-dialog v-model="autoScheduleDialogVisible" title="自动排课" width="500px">
-      <el-form ref="autoScheduleFormRef" :model="autoScheduleForm" label-width="100px">
-        <el-form-item label="起始周">
-          <el-input-number v-model="autoScheduleForm.startWeek" :min="1" :max="20" />
-        </el-form-item>
-        <el-form-item label="结束周">
-          <el-input-number v-model="autoScheduleForm.endWeek" :min="1" :max="20" />
-        </el-form-item>
-        <el-form-item label="优先级">
-          <el-radio-group v-model="autoScheduleForm.priority">
-            <el-radio label="teacher">教师优先</el-radio>
-            <el-radio label="classroom">教室优先</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="教室分配">
-          <el-switch v-model="autoScheduleForm.considerClassroom" active-text="需要分配教室" inactive-text="使用固定教室" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="flex justify-end">
-          <el-button @click="autoScheduleDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleAutoScheduleSubmit" :loading="autoScheduleLoading">
-            开始排课
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <AutoScheduleDialog v-model="autoScheduleVisible" @success="handleAutoScheduleSuccess" />
   </div>
 </template>
 
@@ -195,6 +169,7 @@
 import { ref, computed, onMounted, watch } from "vue"
 import { Download, Edit, Delete, Plus } from "@element-plus/icons-vue"
 import { ElMessage, ElMessageBox } from "element-plus"
+import AutoScheduleDialog from "@/components/AutoScheduleDialog.vue"
 import {
   getSchedule,
   generateSchedule,
@@ -321,15 +296,14 @@ const courseLoading = ref(false)
 const teacherLoading = ref(false)
 const classroomLoading = ref(false)
 
-// 自动排课
-const autoScheduleDialogVisible = ref(false)
-const autoScheduleLoading = ref(false)
-const autoScheduleForm = ref({
-  startWeek: 1,
-  endWeek: 16,
-  priority: 'teacher',
-  considerClassroom: true
-})
+// 自动排课对话框
+const autoScheduleVisible = ref(false)
+
+// 处理自动排课成功
+const handleAutoScheduleSuccess = (data) => {
+  ElMessage.success(`成功生成 ${data.count} 条课程安排`)
+  loadSchedule()
+}
 
 // 搜索课程
 const searchCourses = async (query) => {
@@ -476,26 +450,6 @@ const handleSubmit = async () => {
       }
     }
   })
-}
-
-// 自动排课
-const handleAutoSchedule = () => {
-  autoScheduleDialogVisible.value = true
-}
-
-// 提交自动排课
-const handleAutoScheduleSubmit = async () => {
-  autoScheduleLoading.value = true
-  try {
-    await generateSchedule(autoScheduleForm.value)
-    ElMessage.success('自动排课成功')
-    autoScheduleDialogVisible.value = false
-    loadSchedule()
-  } catch (error) {
-    ElMessage.error('自动排课失败')
-  } finally {
-    autoScheduleLoading.value = false
-  }
 }
 
 // 导出课表
