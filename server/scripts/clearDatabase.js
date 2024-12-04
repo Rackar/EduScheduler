@@ -38,6 +38,10 @@ async function clearDatabase() {
       Course.deleteMany({}),
       Class.deleteMany({}),
       Schedule.deleteMany({}),
+      // 删除角色中有teacher的user
+      User.deleteMany({
+        roles: { $in: ["teacher"] },
+      }),
     ]);
 
     console.log("清理结果:");
@@ -45,7 +49,7 @@ async function clearDatabase() {
     console.log("Courses deleted:", results[1].deletedCount);
     console.log("Classes deleted:", results[2].deletedCount);
     console.log("Schedules deleted:", results[3].deletedCount);
-
+    console.log("Teachers deleted:", results[4].deletedCount);
     console.log("\n数据库清理完成！");
   } catch (error) {
     console.error("清理数据库时出错:", error);

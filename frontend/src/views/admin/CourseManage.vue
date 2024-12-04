@@ -76,7 +76,7 @@
         @current-change="handleCurrentChange" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="formType === 'add' ? '新增课程' : '编辑课程'" width="600px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="formType === 'add' ? '新增��程' : '编辑课程'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="mt-4">
         <el-form-item label="课程名称" prop="name">
           <el-input v-model="form.name" />
@@ -127,30 +127,29 @@
 
     <el-dialog v-model="importResultVisible" title="导入结果" width="800px" destroy-on-close>
       <div class="mb-4">
-        <el-alert :title="`成功导入 ${importResult.successCount} 条数据，失败 ${importResult.failedCount} 条`"
-          :type="importResult.failedCount > 0 ? 'warning' : 'success'" show-icon />
+        <el-alert :title="`成功导入 ${importResult.results.success.length} 条数据，失败 ${importResult.results.errors.length} 条`"
+          :type="importResult.results.errors.length > 0 ? 'warning' : 'success'" show-icon />
       </div>
 
-      <div v-if="importResult.results?.success?.length" class="mb-4">
+      <div v-if="importResult.results.success.length" class="mb-4">
         <h3 class="text-lg font-bold mb-2">成功导入的课程</h3>
         <el-table :data="importResult.results.success" border stripe>
           <el-table-column prop="code" label="课程代码" width="120" />
           <el-table-column prop="name" label="课程名称" />
           <el-table-column prop="teacher" label="教师" width="120" />
-          <el-table-column prop="isUpdate" label="状态" width="100">
+          <el-table-column label="班级" min-width="150">
             <template #default="{ row }">
-              <el-tag :type="row.isUpdate ? 'warning' : 'success'">
-                {{ row.isUpdate ? "更新" : "新增" }}
+              <el-tag v-for="className in row.classes" :key="className" class="mr-1">
+                {{ className }}
               </el-tag>
             </template>
           </el-table-column>
         </el-table>
       </div>
 
-      <div v-if="importResult.results?.errors?.length">
+      <div v-if="importResult.results.errors.length">
         <h3 class="text-lg font-bold mb-2">导入失败的课程</h3>
         <el-table :data="importResult.results.errors" border stripe>
-          <el-table-column prop="code" label="课程代码" width="120" />
           <el-table-column prop="name" label="课程名称" />
           <el-table-column prop="error" label="失败原因" show-overflow-tooltip />
         </el-table>
@@ -159,7 +158,7 @@
       <template #footer>
         <div class="flex justify-end">
           <el-button @click="importResultVisible = false">关闭</el-button>
-          <el-button type="primary" @click="handleRetryImport" v-if="importResult.results?.errors?.length">
+          <el-button type="primary" @click="handleRetryImport" v-if="importResult.results.errors.length">
             重试失败项
           </el-button>
         </div>
@@ -351,6 +350,7 @@ const downloadTemplate = () => {
       课时: 32,
       课程类型: "必修课",
       上课周次: "1-16",
+      上课班级: "计算机1-3班",
       课程描述: "这是一门示例课程",
     },
   ]
@@ -397,6 +397,7 @@ const handleFileChange = async (file) => {
             hours: row["课时"] || row["hours"] || "32",
             type: row["课程类型"] || row["type"] || "必修课",
             weeks: row["上课周次"] || row["weeks"] || "1-20",
+            className: row["上课班级"] || row["班级"] || row["class"] || row["className"] || "",
             description: row["课程描述"] || row["description"] || "",
             semester: row["学期"] || row["semester"] || "",
             studentCount: row["学生人数"] || row["studentCount"] || "0"
@@ -418,10 +419,18 @@ const handleFileChange = async (file) => {
         const result = await batchImportCourses({ courses })
         console.log("导入结果:", result)
 
-        importResult.value = result
+        // 更新导入结果统计
+        importResult.value = {
+          successCount: result.success?.length || 0,
+          failedCount: result.errors?.length || 0,
+          results: {
+            success: result.success || [],
+            errors: result.errors || [],
+          },
+        }
         importResultVisible.value = true
 
-        if (result.successCount > 0) {
+        if (result.success?.length > 0) {
           fetchCourses()
         }
       } catch (error) {

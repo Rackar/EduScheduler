@@ -51,34 +51,69 @@ const classSchema = new mongoose.Schema(
 
 classSchema.index({ school: 1, name: 1 }, { unique: true });
 
-classSchema.statics.parseClassNames = function (classNameString) {
+classSchema.statics.parseClassNames = function (
+  classNameString,
+  studentCount = 0
+) {
   if (!classNameString) return [];
 
   const classNames = [];
   const majors = classNameString.split("、");
 
   for (const major of majors) {
-    const match = major.match(/^(.+?)(\d+)-(\d+)班$/);
-    if (match) {
-      const [, department, start, end] = match;
-      for (let i = parseInt(start); i <= parseInt(end); i++) {
+    let department, gradeStr, classNumberStr;
+
+    let rangeMatch = major.match(/^(.+?)(\d{2})级(\d+)-(\d+)班$/);
+    if (rangeMatch) {
+      const [, dept, grade, start, end] = rangeMatch;
+      department = dept;
+      const gradeYear = 2000 + parseInt(grade);
+      const startNum = parseInt(start);
+      const endNum = parseInt(end);
+
+      const avgStudentCount = Math.floor(
+        studentCount / (endNum - startNum + 1)
+      );
+
+      for (let i = startNum; i <= endNum; i++) {
         classNames.push({
-          name: `${department}${i}班`,
+          name: `${department}${grade}级${i}班`,
           department,
+          grade: gradeYear,
           classNumber: i,
-          grade: new Date().getFullYear(),
+          studentCount: avgStudentCount,
         });
       }
     } else {
-      const basicMatch = major.match(/^(.+?)(\d+)班$/);
+      let basicMatch = major.match(/^(.+?)(\d{2})级(\d+)班$/);
       if (basicMatch) {
-        const [, department, classNumber] = basicMatch;
+        const [, dept, grade, classNum] = basicMatch;
+        department = dept;
+        const gradeYear = 2000 + parseInt(grade);
+        const classNumber = parseInt(classNum);
+
         classNames.push({
           name: major,
           department,
-          classNumber: parseInt(classNumber),
-          grade: new Date().getFullYear(),
+          grade: gradeYear,
+          classNumber,
+          studentCount: parseInt(studentCount) || 0,
         });
+      } else {
+        basicMatch = major.match(/^(.+?)(\d+)班$/);
+        if (basicMatch) {
+          const [, dept, classNum] = basicMatch;
+          department = dept;
+          const classNumber = parseInt(classNum);
+
+          classNames.push({
+            name: major,
+            department,
+            grade: new Date().getFullYear(),
+            classNumber,
+            studentCount: parseInt(studentCount) || 0,
+          });
+        }
       }
     }
   }

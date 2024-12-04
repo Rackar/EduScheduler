@@ -269,8 +269,38 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
     errors: [],
   };
 
+  console.log("开始导入课程，总数:", courses.length);
+
   for (const courseData of courses) {
     try {
+      console.log(
+        "处理课程:",
+        courseData.name,
+        "班级信息:",
+        courseData.className
+      );
+
+      // 处理周次信息
+      let weeks = {
+        start: 1,
+        end: 20,
+      };
+
+      if (courseData.weeks) {
+        if (typeof courseData.weeks === "string") {
+          const match = courseData.weeks.match(/(\d+)-(\d+)/);
+          if (match) {
+            weeks.start = parseInt(match[1]);
+            weeks.end = parseInt(match[2]);
+          }
+        } else if (typeof courseData.weeks === "object") {
+          weeks = {
+            start: parseInt(courseData.weeks.start) || 1,
+            end: parseInt(courseData.weeks.end) || 20,
+          };
+        }
+      }
+
       // 查找或创建教师
       let teacher = null;
       if (courseData.teacherName) {
@@ -282,7 +312,6 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
         });
 
         if (!teacher) {
-          // 如果找不到教师，创建一个新教师
           const username = `${courseData.teacherName}${Date.now()}`;
           teacher = await User.create({
             tenant: req.user.tenant,
@@ -298,11 +327,17 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
 
       // 处理班级信息
       let classIds = [];
+      let parsedClasses = [];
       if (courseData.className) {
-        const parsedClasses = Class.parseClassNames(courseData.className);
+        console.log("解析班级名称:", courseData.className);
+        parsedClasses = Class.parseClassNames(
+          courseData.className,
+          courseData.studentCount
+        );
+        console.log("解析结果:", parsedClasses);
 
         for (const classInfo of parsedClasses) {
-          // 查找或创建班级
+          console.log("处理班级:", classInfo.name);
           let classDoc = await Class.findOne({
             tenant: req.user.tenant,
             school: req.user.school,
@@ -310,11 +345,23 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
           });
 
           if (!classDoc) {
+            console.log("创建新班级:", classInfo.name);
             classDoc = await Class.create({
               tenant: req.user.tenant,
               school: req.user.school,
               ...classInfo,
             });
+            console.log("班级创建成功:", classDoc._id);
+          } else {
+            // 更新现有班级的学生人数
+            if (
+              classInfo.studentCount &&
+              classInfo.studentCount !== classDoc.studentCount
+            ) {
+              classDoc.studentCount = classInfo.studentCount;
+              await classDoc.save();
+            }
+            console.log("找到现有班级:", classDoc._id);
           }
 
           classIds.push(classDoc._id);
@@ -327,15 +374,18 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
         school: req.user.school,
         name: courseData.name,
         code: courseData.code,
-        credit: courseData.credit,
-        hours: courseData.hours,
-        type: courseData.type,
-        department: courseData.department,
+        credit: parseFloat(courseData.credit) || 2,
+        hours: parseInt(courseData.hours) || 32,
+        type: courseData.type || "必修课",
+        department:
+          courseData.department || teacher?.profile?.department || "未知",
         teacher: teacher?._id,
         classes: classIds,
         semester: courseData.semester,
-        weeks: courseData.weeks,
+        weeks,
       });
+
+      console.log("课程创建成功:", course._id);
 
       // 更新教师的课程列表
       if (teacher) {
@@ -343,14 +393,17 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
         teacher.profile.courses = teacher.profile.courses || [];
         teacher.profile.courses.push(course._id);
         await teacher.save();
+        console.log("更新教师课程列表成功");
       }
 
       // 更新班级的课程列表
       if (classIds.length > 0) {
-        await Class.updateMany(
+        console.log("更新班级课程列表:", classIds);
+        const updateResult = await Class.updateMany(
           { _id: { $in: classIds } },
           { $addToSet: { courses: course._id } }
         );
+        console.log("班级更新结果:", updateResult);
       }
 
       results.success.push({
@@ -360,6 +413,7 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
         classes: parsedClasses.map((c) => c.name),
       });
     } catch (error) {
+      console.error("处理课程失败:", error);
       results.errors.push({
         name: courseData.name,
         error: error.message,
