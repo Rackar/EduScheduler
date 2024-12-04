@@ -1,5 +1,7 @@
 <template>
   <div class="p-4">
+    <el-loading v-if="importing" :fullscreen="true" text="正在处理导入数据，请稍候..." />
+
     <div class="mb-4 flex justify-between items-center">
       <div class="flex items-center space-x-4">
         <el-input v-model="searchQuery" placeholder="搜索课程名称、代码或院系" class="w-64" clearable :prefix-icon="Search" />
@@ -9,8 +11,10 @@
         <el-button type="primary" :icon="Plus" @click="handleAdd">
           新增课程
         </el-button>
-        <el-dropdown>
-          <el-button :icon="Upload">导入课程</el-button>
+        <el-dropdown :disabled="importing">
+          <el-button :icon="Upload" :loading="importing">
+            {{ importing ? '正在导入...' : '导入课程' }}
+          </el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item @click="downloadTemplate">
@@ -20,7 +24,7 @@
               </el-dropdown-item>
               <el-dropdown-item>
                 <el-upload ref="uploadRef" :auto-upload="false" :show-file-list="false" :on-change="handleFileChange"
-                  accept=".xlsx,.xls">
+                  :disabled="importing" accept=".xlsx,.xls">
                   <div class="flex items-center">
                     <el-icon>
                       <Upload />
@@ -76,7 +80,7 @@
         @current-change="handleCurrentChange" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="formType === 'add' ? '新增��程' : '编辑课程'" width="600px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="formType === 'add' ? '新增程' : '编辑课程'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="mt-4">
         <el-form-item label="课程名称" prop="name">
           <el-input v-model="form.name" />
@@ -192,6 +196,7 @@ const pageSize = ref(10)
 const total = ref(0)
 const searchQuery = ref("")
 const showInactive = ref(false)
+const importing = ref(false)
 
 // 文件上传相关
 const fileInputRef = ref(null)
@@ -243,23 +248,40 @@ const fetchCourses = async () => {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      query: searchQuery.value,
-      includeInactive: showInactive.value
+      query: searchQuery.value || undefined,
+      includeInactive: showInactive.value,
     }
-    const { items, total: totalCount } = await getCourseList(params)
-    courses.value = items
-    total.value = totalCount
+    const { data } = await getCourseList(params)
+    console.log("课程列表响应:", data) // 添加日志
+    if (Array.isArray(data)) {
+      courses.value = data
+      total.value = data.length
+    } else if (data?.items) {
+      courses.value = data.items
+      total.value = data.total || data.items.length
+    } else {
+      courses.value = []
+      total.value = 0
+    }
+    console.log("处理后的课程列表:", courses.value) // 添加日志
   } catch (error) {
-    ElMessage.error(error.message || "获取课程列表失败")
+    console.error("获取课程列表失败:", error) // 添加错误日志
+    ElMessage.error(error.response?.data?.message || "获取课程列表失败")
+    courses.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
 }
 
 // 监听查询条件变化
-watch([currentPage, pageSize, searchQuery, showInactive], () => {
-  fetchCourses()
-})
+watch(
+  [currentPage, pageSize, searchQuery, showInactive],
+  () => {
+    fetchCourses()
+  },
+  { immediate: true }
+)
 
 // 分页处理
 const handleSizeChange = (val) => {
@@ -366,6 +388,13 @@ const handleFileChange = async (file) => {
   if (!file) return
 
   try {
+    importing.value = true
+    ElMessage({
+      type: "info",
+      message: "正在处理导入数据，请稍候...",
+      duration: 0,
+    })
+
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
@@ -428,20 +457,27 @@ const handleFileChange = async (file) => {
             errors: result.errors || [],
           },
         }
+
+        ElMessage.closeAll()
         importResultVisible.value = true
 
         if (result.success?.length > 0) {
           fetchCourses()
         }
       } catch (error) {
+        ElMessage.closeAll()
         console.error("导入处理错误:", error)
         ElMessage.error(error.message || "导入失败")
+      } finally {
+        importing.value = false
       }
     }
     reader.readAsArrayBuffer(file.raw)
   } catch (error) {
+    ElMessage.closeAll()
     console.error("文件读取错误:", error)
     ElMessage.error(error.message || "文件读取失败")
+    importing.value = false
   }
 }
 

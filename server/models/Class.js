@@ -127,12 +127,22 @@ classSchema.set("toJSON", {
     delete ret._id;
     delete ret.__v;
 
-    if (ret.courses) {
-      ret.courses = ret.courses.map((course) =>
-        typeof course === "object"
-          ? { ...course, id: course._id.toString(), _id: undefined }
-          : course.toString()
-      );
+    if (ret.tenant) {
+      ret.tenant = ret.tenant.toString();
+    }
+    if (ret.school) {
+      ret.school = ret.school.toString();
+    }
+
+    if (Array.isArray(ret.courses)) {
+      ret.courses = ret.courses
+        .map((course) => {
+          if (!course) return null;
+          return typeof course === "object"
+            ? { ...course, id: course._id?.toString(), _id: undefined }
+            : course.toString();
+        })
+        .filter(Boolean);
     }
 
     return ret;

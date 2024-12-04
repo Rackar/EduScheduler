@@ -1,11 +1,13 @@
 <template>
   <div class="p-4">
-    <!-- 搜索和操作栏 -->
     <div class="mb-4 flex justify-between items-center">
       <div class="flex items-center space-x-4">
-        <el-input v-model="searchQuery" placeholder="搜索教师姓名、用户名或邮箱" class="w-64" clearable :prefix-icon="Search" />
+        <el-input v-model="searchQuery" placeholder="搜索教师姓名或用户名" class="w-64" clearable :prefix-icon="Search" />
         <el-select v-model="departmentFilter" placeholder="选择院系" clearable class="w-48">
           <el-option v-for="dept in departments" :key="dept" :label="dept" :value="dept" />
+        </el-select>
+        <el-select v-model="titleFilter" placeholder="选择职称" clearable class="w-32">
+          <el-option v-for="title in titles" :key="title" :label="title" :value="title" />
         </el-select>
       </div>
       <el-button type="primary" :icon="Plus" @click="handleAdd">
@@ -13,26 +15,24 @@
       </el-button>
     </div>
 
-    <!-- 教师列表 -->
-    <el-table v-loading="loading" :data="teachers" border style="width: 100%" row-key="_id">
+    <el-table v-loading="loading" :data="teachers" border style="width: 100%" row-key="id">
       <el-table-column prop="username" label="用户名" width="120" />
       <el-table-column prop="name" label="姓名" width="120" />
       <el-table-column prop="email" label="邮箱" width="200" />
-      <el-table-column prop="phone" label="电话" width="120" />
-      <el-table-column prop="profile.title" label="职称" width="120" />
-      <el-table-column prop="profile.department" label="所属院系" width="150" />
-      <el-table-column label="课程数" width="100" align="center">
+      <el-table-column prop="phone" label="手机号" width="120" />
+      <el-table-column prop="department" label="所属院系" width="150" />
+      <el-table-column prop="title" label="职称" width="120" />
+      <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          {{ row.profile?.courses?.length || 0 }}
+          <el-tag :type="row.status === 'active' ? 'success' : 'info'">
+            {{ row.status === "active" ? "在职" : "离职" }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width="200">
+      <el-table-column label="操作" fixed="right" width="150">
         <template #default="{ row }">
           <el-button :icon="Edit" link type="primary" @click="handleEdit(row)">
             编辑
-          </el-button>
-          <el-button :icon="Timer" link type="warning" @click="handleAvailability(row)">
-            时间
           </el-button>
           <el-button :icon="Delete" link type="danger" @click="handleDelete(row)">
             删除
@@ -51,59 +51,38 @@
     <el-dialog v-model="dialogVisible" :title="formType === 'add' ? '新增教师' : '编辑教师'" width="500px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="mt-4">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" :disabled="formType === 'edit'" />
+          <el-input v-model="form.username" placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" placeholder="请输入姓名" />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" />
+          <el-input v-model="form.email" placeholder="请输入邮箱" />
         </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="form.phone" />
-        </el-form-item>
-        <el-form-item label="职称" prop="title">
-          <el-select v-model="form.title" class="w-full">
-            <el-option label="教授" value="教授" />
-            <el-option label="副教授" value="副教授" />
-            <el-option label="讲师" value="讲师" />
-            <el-option label="助教" value="助教" />
-          </el-select>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="form.phone" placeholder="请输入手机号" />
         </el-form-item>
         <el-form-item label="所属院系" prop="department">
           <el-select v-model="form.department" class="w-full" filterable allow-create default-first-option>
             <el-option v-for="dept in departments" :key="dept" :label="dept" :value="dept" />
           </el-select>
         </el-form-item>
+        <el-form-item label="职称" prop="title">
+          <el-select v-model="form.title" class="w-full" filterable allow-create default-first-option>
+            <el-option v-for="title in titles" :key="title" :label="title" :value="title" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio label="active">在职</el-radio>
+            <el-radio label="inactive">离职</el-radio>
+          </el-radio-group>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="flex justify-end">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSubmit" :loading="submitting">
-            确定
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <!-- 时间设置对话框 -->
-    <el-dialog v-model="availabilityDialogVisible" title="设置教师可用时间" width="800px" destroy-on-close>
-      <div class="grid grid-cols-6 gap-4">
-        <div class="col-span-1"></div>
-        <div v-for="day in weekDays" :key="day.value" class="col-span-1 text-center font-bold">
-          {{ day.label }}
-        </div>
-        <template v-for="slot in timeSlots" :key="slot.value">
-          <div class="text-right">{{ slot.label }}</div>
-          <div v-for="day in weekDays" :key="day.value" class="flex justify-center items-center">
-            <el-checkbox v-model="availabilityForm[`${day.value}_${slot.value}`]" border />
-          </div>
-        </template>
-      </div>
-      <template #footer>
-        <div class="flex justify-end">
-          <el-button @click="availabilityDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleAvailabilitySubmit" :loading="submitting">
             确定
           </el-button>
         </div>
@@ -137,15 +116,28 @@ const pageSize = ref(10)
 const total = ref(0)
 const searchQuery = ref("")
 const departmentFilter = ref("")
+const titleFilter = ref("")
 
 // 从教师列表中提取所有院系
 const departments = computed(() => {
+  if (!teachers.value) return []
   const deptSet = new Set(
     teachers.value
-      .map((t) => t.profile?.department)
-      .filter((d) => d)
+      .map((t) => t.department)
+      .filter(Boolean)
   )
   return Array.from(deptSet).sort()
+})
+
+// 从教师列表中提取所有职称
+const titles = computed(() => {
+  if (!teachers.value) return []
+  const titleSet = new Set(
+    teachers.value
+      .map((t) => t.title)
+      .filter(Boolean)
+  )
+  return Array.from(titleSet).sort()
 })
 
 // 表单数据
@@ -158,8 +150,9 @@ const form = ref({
   name: "",
   email: "",
   phone: "",
-  title: "",
   department: "",
+  title: "",
+  status: "active",
 })
 
 // 表单验证规则
@@ -173,9 +166,12 @@ const rules = {
     { required: true, message: "请输入邮箱", trigger: "blur" },
     { type: "email", message: "请输入正确的邮箱格式", trigger: "blur" },
   ],
-  phone: [{ required: true, message: "请输入电话", trigger: "blur" }],
+  phone: [
+    { required: true, message: "请输入手机号", trigger: "blur" },
+    { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号格式", trigger: "blur" },
+  ],
+  department: [{ required: true, message: "请选择所属院系", trigger: "change" }],
   title: [{ required: true, message: "请选择职称", trigger: "change" }],
-  department: [{ required: true, message: "请选择院系", trigger: "change" }],
 }
 
 // 时间设置数据
@@ -206,12 +202,13 @@ const fetchTeachers = async () => {
       size: pageSize.value,
       query: searchQuery.value,
       department: departmentFilter.value,
+      title: titleFilter.value,
     }
-    const { items, total: totalCount } = await getTeacherList(params)
-    teachers.value = items
-    total.value = totalCount
+    const { data } = await getTeacherList(params)
+    teachers.value = data.items || []
+    total.value = data.total || 0
   } catch (error) {
-    ElMessage.error(error.message || "获取教师列表失败")
+    ElMessage.error(error.response?.data?.message || "获取教师列表失败")
   } finally {
     loading.value = false
   }
@@ -219,7 +216,7 @@ const fetchTeachers = async () => {
 
 // 监听查询条件变化
 watch(
-  [currentPage, pageSize, searchQuery, departmentFilter],
+  [currentPage, pageSize, searchQuery, departmentFilter, titleFilter],
   () => {
     fetchTeachers()
   }
@@ -243,8 +240,9 @@ const handleAdd = () => {
     name: "",
     email: "",
     phone: "",
-    title: "",
     department: "",
+    title: "",
+    status: "active",
   }
   dialogVisible.value = true
 }
@@ -252,34 +250,22 @@ const handleAdd = () => {
 // 编辑教师
 const handleEdit = (row) => {
   formType.value = "edit"
-  form.value = {
-    _id: row._id,
-    username: row.username,
-    name: row.name,
-    email: row.email,
-    phone: row.phone,
-    title: row.profile?.title,
-    department: row.profile?.department,
-  }
+  form.value = { ...row }
   dialogVisible.value = true
 }
 
 // 删除教师
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm(
-      "删除教师将同时删除其账号，是否确认？",
-      "提示",
-      {
-        type: "warning",
-      }
-    )
-    await deleteTeacher(row._id)
+    await ElMessageBox.confirm("确定要删除该教师吗？", "提示", {
+      type: "warning",
+    })
+    await deleteTeacher(row.id)
     ElMessage.success("删除成功")
     fetchTeachers()
   } catch (error) {
     if (error !== "cancel") {
-      ElMessage.error(error.message || "删除失败")
+      ElMessage.error(error.response?.data?.message || "删除失败")
     }
   }
 }
@@ -292,27 +278,17 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitting.value = true
 
-    const data = {
-      username: form.value.username,
-      name: form.value.name,
-      email: form.value.email,
-      phone: form.value.phone,
-      title: form.value.title,
-      department: form.value.department,
-    }
-
     if (formType.value === "add") {
-      await createTeacher(data)
-      ElMessage.success("创建成功")
+      await createTeacher(form.value)
     } else {
-      await updateTeacher(form.value._id, data)
-      ElMessage.success("更新成功")
+      await updateTeacher(form.value.id, form.value)
     }
 
+    ElMessage.success(`${formType.value === "add" ? "创建" : "更新"}成功`)
     dialogVisible.value = false
     fetchTeachers()
   } catch (error) {
-    ElMessage.error(error.message || `${formType.value === "add" ? "创建" : "更新"}失败`)
+    ElMessage.error(error.response?.data?.message || `${formType.value === "add" ? "创建" : "更新"}失败`)
   } finally {
     submitting.value = false
   }

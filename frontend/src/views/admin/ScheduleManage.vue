@@ -192,70 +192,98 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { Download, Edit, Delete, Plus } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, onMounted, watch } from "vue"
+import { Download, Edit, Delete, Plus } from "@element-plus/icons-vue"
+import { ElMessage, ElMessageBox } from "element-plus"
 import {
   getSchedule,
   generateSchedule,
   adjustSchedule,
   exportSchedule,
-  checkConflicts
-} from '@/api'
-import { getCourseList } from '@/api'
-import { getTeacherList } from '@/api'
-import { getClassrooms } from '@/api'
-import { getClasses } from '@/api'
+  checkConflicts,
+  getTimeSlots,
+  getClassrooms,
+} from "@/api/schedule"
+import { getCourseList } from "@/api/course"
+import { getTeacherList } from "@/api/teacher"
+import { getClassList } from "@/api/class"
 
 // 基础数据
 const weekDays = [
-  { label: '周一', value: 'monday' },
-  { label: '周二', value: 'tuesday' },
-  { label: '周三', value: 'wednesday' },
-  { label: '周四', value: 'thursday' },
-  { label: '周五', value: 'friday' }
+  { label: "周一", value: "monday" },
+  { label: "周二", value: "tuesday" },
+  { label: "周三", value: "wednesday" },
+  { label: "周四", value: "thursday" },
+  { label: "周五", value: "friday" },
 ]
 
 const timeSlots = [
-  { label: '第1-2节', value: '1-2' },
-  { label: '第3-4节', value: '3-4' },
-  { label: '第5-6节', value: '5-6' },
-  { label: '第7-8节', value: '7-8' },
-  { label: '第9-10节', value: '9-10' }
+  { label: "第1-2节", value: "1-2" },
+  { label: "第3-4节", value: "3-4" },
+  { label: "第5-6节", value: "5-6" },
+  { label: "第7-8节", value: "7-8" },
+  { label: "第9-10节", value: "9-10" },
 ]
 
-// 视图控制
-const viewType = ref('week')
-const currentWeek = ref(1)
-const currentClass = ref('')
-const loading = ref(false)
-
-// 课表数据
+// 响应式数据
 const scheduleData = ref([])
+const loading = ref(false)
+const currentClass = ref("")
+const currentWeek = ref(1)
+const viewType = ref("week")
+
+// 计算属性
 const scheduleList = computed(() => {
-  let filteredSchedule = scheduleData.value;
+  if (!Array.isArray(scheduleData.value)) {
+    return []
+  }
+
+  let filtered = scheduleData.value
 
   // 按班级筛选
   if (currentClass.value) {
-    filteredSchedule = filteredSchedule.filter(item => item.class?._id === currentClass.value);
+    filtered = filtered.filter(item => item.class?.id === currentClass.value)
   }
 
   // 按周次筛选
-  if (viewType.value === 'week') {
-    filteredSchedule = filteredSchedule.filter(item => item.week === currentWeek.value);
+  if (viewType.value === "week") {
+    filtered = filtered.filter(item => Number(item.week) === Number(currentWeek.value))
   }
 
-  return filteredSchedule;
+  return filtered
 })
+
+// 加载课程表数据
+const loadSchedule = async () => {
+  try {
+    loading.value = true
+    const params = {
+      classId: currentClass.value || undefined,
+      week: viewType.value === "week" ? currentWeek.value : undefined,
+    }
+    const { data } = await getSchedule(params)
+    scheduleData.value = Array.isArray(data) ? data : (data?.items || [])
+    console.log("课程表数据:", scheduleData.value) // 添加日志
+  } catch (error) {
+    console.error("加载课程表失败:", error)
+    ElMessage.error(error.response?.data?.message || "获取课程表失败")
+    scheduleData.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 // 班级选项
 const classOptions = ref([])
 const loadClasses = async () => {
   try {
-    const res = await getClasses()
-    classOptions.value = res
+    const { data } = await getClassList()
+    classOptions.value = Array.isArray(data) ? data : (data?.items || [])
+    console.log("班级列表:", classOptions.value) // 添加日志
   } catch (error) {
-    ElMessage.error('加载班级列表失败')
+    console.error("加载班级列表失败:", error)
+    ElMessage.error(error.response?.data?.message || "获取班级列表失败")
+    classOptions.value = []
   }
 }
 
@@ -303,23 +331,6 @@ const autoScheduleForm = ref({
   considerClassroom: true
 })
 
-// 获取课表数据
-const loadSchedule = async () => {
-  loading.value = true
-  try {
-    const params = {
-      week: viewType.value === 'week' ? currentWeek.value : undefined,
-      class: currentClass.value || undefined
-    }
-    const res = await getSchedule(params)
-    scheduleData.value = res
-  } catch (error) {
-    ElMessage.error('加载课表失败')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 搜索课程
 const searchCourses = async (query) => {
   if (query !== '') {
@@ -365,34 +376,27 @@ const searchClassrooms = async (query) => {
   }
 }
 
-// 获取课表项
+// 辅助函数
+const getDayLabel = (day) => {
+  const found = weekDays.find(d => d.value === day)
+  return found ? found.label : day
+}
+
+const getTimeSlotLabel = (timeSlot) => {
+  const found = timeSlots.find(t => t.value === timeSlot)
+  return found ? found.label : timeSlot
+}
+
 const getScheduleItem = (day, timeSlot) => {
   return scheduleList.value.find(
     item => item.day === day && item.timeSlot === timeSlot
   )
 }
 
-// 获取星期标签
-const getDayLabel = (day) => {
-  return weekDays.find(item => item.value === day)?.label
+const getClassroomInfo = (schedule) => {
+  if (!schedule?.classroom) return "未分配教室"
+  return `${schedule.classroom.building}-${schedule.classroom.room}`
 }
-
-// 获取时间段标签
-const getTimeSlotLabel = (timeSlot) => {
-  return timeSlots.find(item => item.value === timeSlot)?.label
-}
-
-// 获取教室信息
-const getClassroomInfo = (scheduleItem) => {
-  if (scheduleItem.classroom) {
-    return `${scheduleItem.classroom.building}-${scheduleItem.classroom.room}`;
-  } else if (scheduleItem.fixedClassroom) {
-    return `${scheduleItem.fixedClassroom.building}-${scheduleItem.fixedClassroom.room}`;
-  } else if (scheduleItem.course?.defaultClassroom) {
-    return `${scheduleItem.course.defaultClassroom.building}-${scheduleItem.course.defaultClassroom.room}`;
-  }
-  return '教室未分配';
-};
 
 // 添加课程
 const handleAddCourse = (day, timeSlot) => {
@@ -514,16 +518,17 @@ const handleExport = async () => {
   }
 }
 
-// 监听数据变化
+// 监听筛选条件变化
 watch(
-  [viewType, currentWeek, currentClass],
+  [currentClass, currentWeek, viewType],
   () => {
     loadSchedule()
-  }
+  },
+  { immediate: true }
 )
 
+// 初始化
 onMounted(() => {
   loadClasses()
-  loadSchedule()
 })
 </script>

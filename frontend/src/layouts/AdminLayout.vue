@@ -16,6 +16,12 @@
           </el-icon>
           <span>课程管理</span>
         </el-menu-item>
+        <el-menu-item index="/admin/classes">
+          <el-icon>
+            <Collection />
+          </el-icon>
+          <span>班级管理</span>
+        </el-menu-item>
         <el-menu-item index="/admin/classrooms">
           <el-icon>
             <School />
@@ -78,6 +84,7 @@ import {
   Calendar,
   Timer,
   Management,
+  Collection,
 } from "@element-plus/icons-vue"
 
 const route = useRoute()

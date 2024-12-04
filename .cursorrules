@@ -22,6 +22,7 @@
       - 数组和对象最后加逗号
       - 使用中文注释
       - 结尾默认不加分号
+      - 在修改代码时一般不删注释，如果功能不变，则不修改和删除注释。
 
       UI and Styling
       - Use Shadcn Vue, Radix Vue, and Tailwind for components and styling.

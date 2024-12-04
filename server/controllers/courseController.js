@@ -353,13 +353,18 @@ exports.batchImportCourses = asyncHandler(async (req, res) => {
             });
             console.log("班级创建成功:", classDoc._id);
           } else {
-            // 更新现有班级的学生人数
-            if (
-              classInfo.studentCount &&
-              classInfo.studentCount !== classDoc.studentCount
-            ) {
+            // 只有在以下情况更新学生人数：
+            // 1. 班级之前没有学生人数（studentCount为0）
+            // 2. 当前导入的是单个班级的数据（不是从范围班级平均分配的）
+            const isRangeClass = courseData.className.includes("-");
+            if (classDoc.studentCount === 0 && !isRangeClass) {
               classDoc.studentCount = classInfo.studentCount;
               await classDoc.save();
+              console.log(
+                "更新班级学生人数:",
+                classDoc.name,
+                classDoc.studentCount
+              );
             }
             console.log("找到现有班级:", classDoc._id);
           }
