@@ -2,6 +2,16 @@ const mongoose = require("mongoose");
 
 const courseSchema = new mongoose.Schema(
   {
+    tenant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+    },
+    school: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "School",
+      required: true,
+    },
     name: { type: String, required: true },
     code: { type: String, required: true },
     credit: { type: Number, required: true },
@@ -10,6 +20,12 @@ const courseSchema = new mongoose.Schema(
     department: { type: String, required: true },
     description: { type: String },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    classes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Class",
+      },
+    ],
     status: {
       type: String,
       enum: ["active", "inactive", "deleted"],
@@ -24,12 +40,7 @@ const courseSchema = new mongoose.Schema(
         return `${year}${month <= 7 ? "春季" : "秋季"}`;
       },
     },
-    className: { type: String },
     studentCount: { type: Number, default: 0 },
-    defaultClassroom: {
-      building: { type: String },
-      room: { type: String },
-    },
     weeks: {
       start: { type: Number, required: true, min: 1, max: 20 },
       end: { type: Number, required: true, min: 1, max: 20 },
@@ -44,15 +55,44 @@ const courseSchema = new mongoose.Schema(
   }
 );
 
-courseSchema.index({ code: 1 });
-courseSchema.index({ status: 1 });
-courseSchema.index({ deletedAt: 1 });
+courseSchema.index({ tenant: 1, school: 1, code: 1 }, { unique: true });
+courseSchema.index({ tenant: 1, school: 1, status: 1 });
+courseSchema.index({ tenant: 1, school: 1, deletedAt: 1 });
 
 courseSchema.pre("validate", function (next) {
   if (this.weeks && this.weeks.start > this.weeks.end) {
     next(new Error("开始周次不能大于结束周次"));
   }
   next();
+});
+
+courseSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    if (ret.teacher) {
+      ret.teacher =
+        typeof ret.teacher === "object"
+          ? { ...ret.teacher, id: ret.teacher._id.toString(), _id: undefined }
+          : ret.teacher.toString();
+    }
+
+    if (ret.classes) {
+      ret.classes = ret.classes.map((cls) =>
+        typeof cls === "object"
+          ? { ...cls, id: cls._id.toString(), _id: undefined }
+          : cls.toString()
+      );
+    }
+
+    if (ret.previousVersion) {
+      ret.previousVersion = ret.previousVersion.toString();
+    }
+
+    return ret;
+  },
 });
 
 module.exports = mongoose.model("Course", courseSchema);

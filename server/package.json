@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "init:superadmin": "node scripts/initSuperAdmin.js",
-    "clean": "node scripts/cleanData.js"
+    "clean": "node scripts/cleanData.js",
+    "cc": "node scripts/clearDatabase.js",
+    "fix:emails": "node scripts/fixTeacherEmails.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

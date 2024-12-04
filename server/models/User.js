@@ -184,13 +184,25 @@ userSchema.set("toJSON", {
     delete ret.__v;
 
     // 处理嵌套的 ObjectId
-    if (ret.tenant && ret.tenant._id) {
-      ret.tenant.id = ret.tenant._id.toString();
-      delete ret.tenant._id;
+    if (ret.tenant) {
+      ret.tenant = ret.tenant.toString();
     }
-    if (ret.school && ret.school._id) {
-      ret.school.id = ret.school._id.toString();
-      delete ret.school._id;
+    if (ret.school) {
+      ret.school = ret.school.toString();
+    }
+
+    // 处理课程数据
+    if (ret.profile && ret.profile.courses) {
+      ret.profile.courses = ret.profile.courses.map((course) => {
+        if (typeof course === "object" && course._id) {
+          return {
+            ...course,
+            id: course._id.toString(),
+            _id: undefined,
+          };
+        }
+        return course.toString();
+      });
     }
 
     // 确保不返回密码

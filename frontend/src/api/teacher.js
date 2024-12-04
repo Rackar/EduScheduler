@@ -1,64 +1,61 @@
 import request from "@/utils/request";
 
 // 获取教师列表
-export function getTeacherList(params) {
+export const getTeacherList = (params) => {
   return request({
-    url: "/api/users/teachers",
+    url: "/api/teachers",
     method: "get",
     params,
   });
-}
+};
 
-// 获取单个教师详情
-export function getTeacherDetail(id) {
+// 获取单个教师
+export const getTeacherById = (id) => {
   return request({
-    url: `/api/users/${id}`,
+    url: `/api/teachers/${id}`,
     method: "get",
   });
-}
+};
 
 // 创建教师
-export function createTeacher(data) {
+export const createTeacher = (data) => {
   return request({
-    url: "/api/users/register",
+    url: "/api/teachers",
     method: "post",
-    data: {
-      ...data,
-      role: "teacher",
-    },
+    data,
   });
-}
+};
 
-// 更新教师信息
-export function updateTeacher(id, data) {
+// 更新教师
+export const updateTeacher = (id, data) => {
   return request({
-    url: `/api/users/${id}`,
+    url: `/api/teachers/${id}`,
     method: "put",
     data,
   });
-}
+};
 
 // 删除教师
-export function deleteTeacher(id) {
+export const deleteTeacher = (id) => {
   return request({
-    url: `/api/users/${id}`,
+    url: `/api/teachers/${id}`,
     method: "delete",
   });
-}
+};
 
 // 获取教师可用时间
-export function getTeacherAvailability(id) {
+export const getTeacherAvailability = (id) => {
   return request({
-    url: `/api/users/${id}/availability`,
+    url: `/api/teachers/${id}/availability`,
     method: "get",
   });
-}
+};
 
 // 更新教师可用时间
-export function updateTeacherAvailability(id, data) {
+export const updateTeacherAvailability = (id, data) => {
   return request({
-    url: `/api/users/${id}/availability`,
+    url: `/api/teachers/${id}/availability`,
     method: "put",
     data,
   });
-}
+};

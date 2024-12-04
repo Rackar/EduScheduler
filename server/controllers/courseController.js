@@ -1,6 +1,7 @@
 const Course = require("../models/Course");
 const User = require("../models/User");
 const Class = require("../models/Class");
+const asyncHandler = require("express-async-handler");
 
 // 获取所有课程
 exports.getAllCourses = async (req, res) => {
@@ -15,6 +16,8 @@ exports.getAllCourses = async (req, res) => {
 
     // 构建查询条件
     const filter = {
+      tenant: req.user.tenant,
+      school: req.user.school,
       status: includeInactive ? { $in: ["active", "inactive"] } : "active",
     };
 
@@ -27,11 +30,9 @@ exports.getAllCourses = async (req, res) => {
       ];
     }
 
-    console.log("查询条件:", filter);
-
     const [courses, total] = await Promise.all([
       Course.find(filter)
-        .populate("teacher", "username department")
+        .populate("teacher", "username name department")
         .populate("previousVersion", "version code name")
         .skip(skip)
         .limit(parseInt(size))
@@ -42,7 +43,7 @@ exports.getAllCourses = async (req, res) => {
     // 格式化返回数据
     const formattedCourses = courses.map((course) => ({
       ...course.toObject(),
-      teacherName: course.teacher?.username,
+      teacherName: course.teacher?.name,
       teacherDepartment: course.teacher?.department,
       previousVersionInfo: course.previousVersion
         ? {
@@ -62,7 +63,10 @@ exports.getAllCourses = async (req, res) => {
     });
   } catch (error) {
     console.error("获取课程列表失败:", error);
-    res.status(500).json({ message: "获取课程列表失败", error: error.message });
+    res.status(500).json({
+      message: "获取课程列表失败",
+      error: error.message,
+    });
   }
 };
 
@@ -110,30 +114,18 @@ exports.getCourseDetail = async (req, res) => {
 // 创建新课程
 exports.createCourse = async (req, res) => {
   try {
-    // 检查是否存在相同代码的活动课程
-    const existingCourse = await Course.findOne({
-      code: req.body.code,
-      status: "active",
-    });
-
-    if (existingCourse) {
-      return res.status(400).json({
-        message: "已存在相同代码的活动课程",
-        existingCourse,
-      });
-    }
-
     const courseData = {
       ...req.body,
-      status: "active",
+      tenant: req.user.tenant,
+      school: req.user.school,
     };
 
-    const newCourse = new Course(courseData);
-    await newCourse.save();
+    const course = new Course(courseData);
+    await course.save();
 
     res.status(201).json({
       message: "创建课程成功",
-      data: newCourse,
+      data: course,
     });
   } catch (error) {
     console.error("创建课程失败:", error);
@@ -148,7 +140,11 @@ exports.createCourse = async (req, res) => {
 exports.updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const currentCourse = await Course.findById(id);
+    const currentCourse = await Course.findOne({
+      _id: id,
+      tenant: req.user.tenant,
+      school: req.user.school,
+    });
 
     if (!currentCourse) {
       return res.status(404).json({ message: "课程不存在" });
@@ -183,6 +179,8 @@ exports.updateCourse = async (req, res) => {
       // 创建新版本
       const newCourse = new Course({
         ...req.body,
+        tenant: req.user.tenant,
+        school: req.user.school,
         version: currentCourse.version + 1,
         previousVersion: currentCourse._id,
         status: "active",
@@ -196,10 +194,18 @@ exports.updateCourse = async (req, res) => {
       });
     } else {
       // 小改动直接更新
-      const updatedCourse = await Course.findByIdAndUpdate(id, req.body, {
-        new: true,
-        runValidators: true,
-      });
+      const updatedCourse = await Course.findOneAndUpdate(
+        {
+          _id: id,
+          tenant: req.user.tenant,
+          school: req.user.school,
+        },
+        req.body,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
       res.json({
         message: "更新课程成功",
@@ -221,7 +227,11 @@ exports.deleteCourse = async (req, res) => {
     const { id } = req.params;
     const { reason = "手动删除" } = req.body;
 
-    const course = await Course.findById(id);
+    const course = await Course.findOne({
+      _id: id,
+      tenant: req.user.tenant,
+      school: req.user.school,
+    });
 
     if (!course) {
       return res.status(404).json({ message: "课程不存在" });
@@ -249,209 +259,113 @@ exports.deleteCourse = async (req, res) => {
   }
 };
 
-// 批量导入课程
-exports.batchImportCourses = async (req, res) => {
-  try {
-    const { courses } = req.body;
+// @desc    批量导入课程
+// @route   POST /api/courses/batch-import
+// @access  Private/Admin
+exports.batchImportCourses = asyncHandler(async (req, res) => {
+  const { courses } = req.body;
+  const results = {
+    success: [],
+    errors: [],
+  };
 
-    if (!Array.isArray(courses)) {
-      return res.status(400).json({ message: "数据格式错误" });
-    }
-
-    const results = {
-      created: [],
-      updated: [],
-      errors: [],
-    };
-
-    // 逐条处理数据
-    for (const courseData of courses) {
-      try {
-        // 确保必需字段存在
-        if (
-          !courseData.teacherName ||
-          !courseData.department ||
-          !courseData.code
-        ) {
-          throw new Error("教师姓名、所属院系和课程代码是必需的");
-        }
-
-        // 处理周次信息
-        let weeks = { start: 1, end: 20 }; // 默认值
-        if (courseData.weekInfo) {
-          try {
-            // 确保 weekInfo 是字符串
-            const weekInfoStr = String(courseData.weekInfo).trim();
-            console.log(`正在解析周次信息: "${weekInfoStr}"`);
-
-            // 移除所有空格
-            const cleanWeekInfo = weekInfoStr.replace(/\s+/g, "");
-
-            // 支持更多格式：2-16、2~16、第2-16周、2到16周、2至16周等
-            const weekMatch = cleanWeekInfo.match(/第?(\d+)[-~到至](\d+)周?/);
-            console.log("周次匹配结果:", weekMatch);
-
-            if (weekMatch) {
-              const start = parseInt(weekMatch[1]);
-              const end = parseInt(weekMatch[2]);
-              console.log(`解析出的开始周: ${start}, 结束周: ${end}`);
-
-              if (
-                !isNaN(start) &&
-                !isNaN(end) &&
-                start > 0 &&
-                end > 0 &&
-                start <= end &&
-                end <= 20
-              ) {
-                weeks = { start, end };
-                console.log(`成功设置周次范围: ${start}-${end}`);
-              } else {
-                console.warn(
-                  `课程 ${courseData.name} 的周次范围无效: ${weekInfoStr}，使用默认值 1-20`
-                );
-              }
-            } else {
-              // 尝试解析单个数字（如果只有一个周）
-              const singleWeek = parseInt(cleanWeekInfo.replace(/[^0-9]/g, ""));
-              console.log(`尝试解析单周: ${singleWeek}`);
-
-              if (!isNaN(singleWeek) && singleWeek > 0 && singleWeek <= 20) {
-                weeks = { start: singleWeek, end: singleWeek };
-                console.log(`成功设置单周: ${singleWeek}`);
-              } else {
-                console.warn(
-                  `课程 ${courseData.name} 的周次格式无效: ${weekInfoStr}，使用默认值 1-20`
-                );
-              }
-            }
-          } catch (error) {
-            console.error(`解析周次信息失败: ${error.message}`);
-          }
-        }
-
-        // 查找或创建教师
-        let teacher = await User.findOne({
-          username: courseData.teacherName,
-          role: "teacher",
+  for (const courseData of courses) {
+    try {
+      // 查找或创建教师
+      let teacher = null;
+      if (courseData.teacherName) {
+        teacher = await User.findOne({
+          tenant: req.user.tenant,
+          school: req.user.school,
+          name: courseData.teacherName,
+          roles: { $in: ["teacher"] },
         });
 
         if (!teacher) {
+          // 如果找不到教师，创建一个新教师
+          const username = `${courseData.teacherName}${Date.now()}`;
           teacher = await User.create({
-            username: courseData.teacherName,
+            tenant: req.user.tenant,
+            school: req.user.school,
+            username,
+            name: courseData.teacherName,
+            email: `${username}@example.com`,
             password: "123456", // 默认密码
-            role: "teacher",
-            department: courseData.department,
+            roles: ["teacher"],
           });
         }
-
-        // 处理班级信息
-        let classIds = [];
-        if (courseData.className) {
-          const classNames = courseData.className
-            .split(",")
-            .map((name) => name.trim());
-          for (const className of classNames) {
-            let classObj = await Class.findOne({ name: className });
-            if (!classObj) {
-              classObj = await Class.create({
-                name: className,
-                department: courseData.department,
-                studentCount: parseInt(courseData.studentCount) || 0,
-                status: "active",
-              });
-            }
-            classIds.push(classObj._id);
-          }
-        }
-
-        // 查找现有课程
-        const existingCourse = await Course.findOne({
-          code: courseData.code,
-          status: "active",
-        });
-
-        let newCourse;
-        if (existingCourse) {
-          // 将现有课程标记为非活动
-          existingCourse.status = "inactive";
-          existingCourse.deletedAt = new Date();
-          existingCourse.deletedReason = "被新版本替换";
-          await existingCourse.save();
-
-          // 创建新版本的课程
-          newCourse = await Course.create({
-            name: courseData.name,
-            code: courseData.code,
-            credit: parseFloat(courseData.credit) || 0,
-            hours: parseFloat(courseData.hours) || 0,
-            type: courseData.type || "必修课",
-            department: courseData.department,
-            teacher: teacher._id,
-            description: courseData.description || "",
-            semester: courseData.semester || "2024春季",
-            classes: classIds,
-            studentCount: parseInt(courseData.studentCount) || 0,
-            weeks,
-            version: existingCourse.version + 1,
-            previousVersion: existingCourse._id,
-          });
-
-          results.updated.push({
-            course: newCourse,
-            teacher: teacher.username,
-            previousVersion: existingCourse._id,
-          });
-        } else {
-          // 创建新课程
-          newCourse = await Course.create({
-            name: courseData.name,
-            code: courseData.code,
-            credit: parseFloat(courseData.credit) || 0,
-            hours: parseFloat(courseData.hours) || 0,
-            type: courseData.type || "必修课",
-            department: courseData.department,
-            teacher: teacher._id,
-            description: courseData.description || "",
-            semester: courseData.semester || "2024春季",
-            classes: classIds,
-            studentCount: parseInt(courseData.studentCount) || 0,
-            weeks,
-            version: 1,
-          });
-
-          results.created.push({
-            course: newCourse,
-            teacher: teacher.username,
-          });
-        }
-
-        // 3. 更新教师的课程列表（不管是新建还是更新）
-        await User.findByIdAndUpdate(teacher._id, {
-          $addToSet: { courses: newCourse._id },
-        });
-      } catch (error) {
-        results.errors.push({
-          data: courseData,
-          error: error.message,
-        });
       }
-    }
 
-    res.status(201).json({
-      message: "批量导入完成",
-      data: {
-        created: results.created.length,
-        updated: results.updated.length,
-        failed: results.errors.length,
-        details: results,
-      },
-    });
-  } catch (error) {
-    console.error("批量导入失败:", error);
-    res.status(400).json({
-      message: "批量导入失败",
-      error: error.message,
-    });
+      // 处理班级信息
+      let classIds = [];
+      if (courseData.className) {
+        const parsedClasses = Class.parseClassNames(courseData.className);
+
+        for (const classInfo of parsedClasses) {
+          // 查找或创建班级
+          let classDoc = await Class.findOne({
+            tenant: req.user.tenant,
+            school: req.user.school,
+            name: classInfo.name,
+          });
+
+          if (!classDoc) {
+            classDoc = await Class.create({
+              tenant: req.user.tenant,
+              school: req.user.school,
+              ...classInfo,
+            });
+          }
+
+          classIds.push(classDoc._id);
+        }
+      }
+
+      // 创建课程
+      const course = await Course.create({
+        tenant: req.user.tenant,
+        school: req.user.school,
+        name: courseData.name,
+        code: courseData.code,
+        credit: courseData.credit,
+        hours: courseData.hours,
+        type: courseData.type,
+        department: courseData.department,
+        teacher: teacher?._id,
+        classes: classIds,
+        semester: courseData.semester,
+        weeks: courseData.weeks,
+      });
+
+      // 更新教师的课程列表
+      if (teacher) {
+        teacher.profile = teacher.profile || {};
+        teacher.profile.courses = teacher.profile.courses || [];
+        teacher.profile.courses.push(course._id);
+        await teacher.save();
+      }
+
+      // 更新班级的课程列表
+      if (classIds.length > 0) {
+        await Class.updateMany(
+          { _id: { $in: classIds } },
+          { $addToSet: { courses: course._id } }
+        );
+      }
+
+      results.success.push({
+        name: course.name,
+        code: course.code,
+        teacher: teacher?.name,
+        classes: parsedClasses.map((c) => c.name),
+      });
+    } catch (error) {
+      results.errors.push({
+        name: courseData.name,
+        error: error.message,
+      });
+    }
   }
-};
+
+  res.status(201).json(results);
+});

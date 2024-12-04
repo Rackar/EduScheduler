@@ -66,6 +66,7 @@ app.use((req, res, next) => {
 app.use("/api/tenants", require("./routes/tenantRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/courses", require("./routes/courseRoutes"));
+app.use("/api/teachers", require("./routes/teacherRoutes"));
 app.use("/api/classrooms", require("./routes/classroomRoutes"));
 app.use("/api/exchanges", require("./routes/exchangeRoutes"));
 app.use("/api/classes", require("./routes/classRoutes"));

@@ -34,19 +34,17 @@ async function clearDatabase() {
 
     // 清空所有集合
     const results = await Promise.all([
-      User.deleteMany({}),
+      Classroom.deleteMany({}),
       Course.deleteMany({}),
       Class.deleteMany({}),
       Schedule.deleteMany({}),
-      Classroom.deleteMany({}),
     ]);
 
     console.log("清理结果:");
-    console.log("Users deleted:", results[0].deletedCount);
+    console.log("Classrooms deleted:", results[0].deletedCount);
     console.log("Courses deleted:", results[1].deletedCount);
     console.log("Classes deleted:", results[2].deletedCount);
     console.log("Schedules deleted:", results[3].deletedCount);
-    console.log("Classrooms deleted:", results[4].deletedCount);
 
     console.log("\n数据库清理完成！");
   } catch (error) {

@@ -19,9 +19,9 @@ const cleanData = async () => {
     const schoolResult = await School.deleteMany({});
     console.log(`已删除 ${schoolResult.deletedCount} 个学校`);
 
-    // 清理作息时间模板数据
-    const templateResult = await ScheduleTemplate.deleteMany({});
-    console.log(`已删除 ${templateResult.deletedCount} 个作息时间模板`);
+    // // 清理作息时间模板数据
+    // const templateResult = await ScheduleTemplate.deleteMany({});
+    // console.log(`已删除 ${templateResult.deletedCount} 个作息时间模板`);
 
     // 清理非超级管理员用户数据
     const userResult = await User.deleteMany({
