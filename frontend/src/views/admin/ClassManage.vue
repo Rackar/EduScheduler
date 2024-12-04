@@ -102,9 +102,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue"
+import { ref, computed, onMounted, watch } from "vue"
 import { Search, Plus, Edit, Delete, View } from "@element-plus/icons-vue"
 import { ElMessage, ElMessageBox } from "element-plus"
+import { useUserStore } from "@/stores/user"
 import {
   getClassList,
   getClassById,
@@ -112,6 +113,8 @@ import {
   updateClass,
   deleteClass,
 } from "@/api/class"
+
+const userStore = useUserStore()
 
 // 列表数据
 const classes = ref([])
@@ -163,6 +166,7 @@ const form = ref({
   grade: new Date().getFullYear(),
   classNumber: 1,
   studentCount: 0,
+  tenantId: userStore.tenantId, // 添加租户ID
 })
 
 // 表单验证规则
@@ -187,6 +191,7 @@ const fetchClasses = async () => {
       query: searchQuery.value || undefined,
       grade: gradeFilter.value || undefined,
       department: departmentFilter.value || undefined,
+      tenantId: userStore.tenantId, // 添加租户ID
     }
     const { data } = await getClassList(params)
     console.log("班级列表响应:", data)
@@ -211,26 +216,6 @@ const fetchClasses = async () => {
   }
 }
 
-// 分页处理
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1
-}
-
-const handleCurrentChange = (val) => {
-  currentPage.value = val
-}
-
-// 监听查询条件变化
-watch(
-  [searchQuery, gradeFilter, departmentFilter],
-  () => {
-    currentPage.value = 1
-    fetchClasses()
-  },
-  { immediate: true }
-)
-
 // 新增班级
 const handleAdd = () => {
   formType.value = "add"
@@ -240,6 +225,7 @@ const handleAdd = () => {
     grade: new Date().getFullYear(),
     classNumber: 1,
     studentCount: 0,
+    tenantId: userStore.tenantId, // 添加租户ID
   }
   dialogVisible.value = true
 }
@@ -266,15 +252,9 @@ const handleViewCourses = async (row) => {
 // 删除班级
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm(
-      row.courses?.length
-        ? "该班级还有关联的课程，确定要删除吗？"
-        : "确定要删除该班级吗？",
-      "提示",
-      {
-        type: "warning",
-      }
-    )
+    await ElMessageBox.confirm("确定要删除该班级吗？", "提示", {
+      type: "warning",
+    })
     await deleteClass(row.id)
     ElMessage.success("删除成功")
     fetchClasses()
@@ -293,10 +273,15 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitting.value = true
 
+    const data = {
+      ...form.value,
+      tenantId: userStore.tenantId, // 确保包含租户ID
+    }
+
     if (formType.value === "add") {
-      await createClass(form.value)
+      await createClass(data)
     } else {
-      await updateClass(form.value.id, form.value)
+      await updateClass(form.value.id, data)
     }
 
     ElMessage.success(`${formType.value === "add" ? "创建" : "更新"}成功`)
@@ -308,6 +293,26 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
+
+// 分页处理
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  currentPage.value = 1
+}
+
+const handleCurrentChange = (val) => {
+  currentPage.value = val
+}
+
+// 监听查询条件变化
+watch(
+  [searchQuery, gradeFilter, departmentFilter],
+  () => {
+    currentPage.value = 1
+    fetchClasses()
+  },
+  { immediate: true }
+)
 
 // 初始化
 onMounted(() => {

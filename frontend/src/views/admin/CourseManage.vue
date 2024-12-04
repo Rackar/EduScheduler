@@ -246,13 +246,12 @@ const fetchCourses = async () => {
   try {
     loading.value = true
     const params = {
-      page: currentPage.value,
-      size: pageSize.value,
       query: searchQuery.value || undefined,
       includeInactive: showInactive.value,
+      tenantId: userStore.tenantId,
     }
     const { data } = await getCourseList(params)
-    console.log("课程列表响应:", data) // 添加日志
+    console.log("课程列表响应:", data)
     if (Array.isArray(data)) {
       courses.value = data
       total.value = data.length
@@ -263,9 +262,9 @@ const fetchCourses = async () => {
       courses.value = []
       total.value = 0
     }
-    console.log("处理后的课程列表:", courses.value) // 添加日志
+    console.log("处理后的课程列表:", courses.value)
   } catch (error) {
-    console.error("获取课程列表失败:", error) // 添加错误日志
+    console.error("获取课程列表失败:", error)
     ElMessage.error(error.response?.data?.message || "获取课程列表失败")
     courses.value = []
     total.value = 0
@@ -276,8 +275,9 @@ const fetchCourses = async () => {
 
 // 监听查询条件变化
 watch(
-  [currentPage, pageSize, searchQuery, showInactive],
+  [searchQuery, showInactive],
   () => {
+    currentPage.value = 1
     fetchCourses()
   },
   { immediate: true }
