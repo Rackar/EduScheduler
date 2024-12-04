@@ -20,13 +20,14 @@ export default {
       },
     })
 
-    const isNew = computed(() => !route.params.id)
+    const isNew = computed(() => route.path.includes("/new"))
 
     // 获取模板数据
     const fetchTemplate = async () => {
       if (!isNew.value) {
         try {
-          const { data } = await axios.get(`/api/schedule-templates/${route.params.id}`)
+          const templateId = route.params.id || route.path.split("/").pop()
+          const { data } = await axios.get(`/api/schedule-templates/${templateId}`)
           template.value = data
         } catch (error) {
           ElMessage.error(error.response?.data?.message || "获取模板数据失败")

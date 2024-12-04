@@ -38,34 +38,6 @@ app.use(
 // 设置响应头，确保 UTF-8 编码
 app.use((req, res, next) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
-
-  // 重写 json 方法以确保中文正确编码
-  const originalJson = res.json;
-  res.json = function (obj) {
-    if (typeof obj === "object" && obj !== null) {
-      // 递归处理对象中的所有字符串值
-      const processStrings = (data) => {
-        if (Array.isArray(data)) {
-          return data.map((item) => processStrings(item));
-        } else if (typeof data === "object" && data !== null) {
-          const processed = {};
-          for (const [key, value] of Object.entries(data)) {
-            processed[key] = processStrings(value);
-          }
-          return processed;
-        } else if (typeof data === "string") {
-          // 对字符串进行 UTF-8 编码处理
-          return Buffer.from(data).toString();
-        }
-        return data;
-      };
-
-      obj = processStrings(obj);
-    }
-
-    return originalJson.call(this, obj);
-  };
-
   next();
 });
 

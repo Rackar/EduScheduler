@@ -175,4 +175,29 @@ userSchema.methods.isStudent = function () {
   return this.roles.includes("student");
 };
 
+// 添加 toJSON 转换
+userSchema.set("toJSON", {
+  transform: function (doc, ret, options) {
+    // 转换 _id
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    // 处理嵌套的 ObjectId
+    if (ret.tenant && ret.tenant._id) {
+      ret.tenant.id = ret.tenant._id.toString();
+      delete ret.tenant._id;
+    }
+    if (ret.school && ret.school._id) {
+      ret.school.id = ret.school._id.toString();
+      delete ret.school._id;
+    }
+
+    // 确保不返回密码
+    delete ret.password;
+
+    return ret;
+  },
+});
+
 module.exports = mongoose.model("User", userSchema);

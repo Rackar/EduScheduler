@@ -206,11 +206,14 @@ const login = asyncHandler(async (req, res) => {
 // @route   GET /api/users/me
 // @access  Private
 const getCurrentUser = asyncHandler(async (req, res) => {
+  console.log("获取当前用户信息 - 用户ID:", req.user._id);
+
   const user = await User.findById(req.user._id)
     .populate("tenant", "name code status")
     .populate("school", "name code status");
 
   if (user) {
+    console.log("找到用户:", user.username);
     res.json({
       id: user._id.toString(),
       username: user.username,
@@ -224,6 +227,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       lastLogin: user.lastLogin,
     });
   } else {
+    console.log("未找到用户");
     res.status(404);
     throw new Error("用户不存在");
   }

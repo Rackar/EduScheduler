@@ -63,4 +63,26 @@ const tenantSchema = new mongoose.Schema(
   }
 );
 
+// 添加 toJSON 转换
+tenantSchema.set("toJSON", {
+  transform: function (doc, ret, options) {
+    // 转换 _id
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    // 处理日期
+    if (ret.subscription) {
+      if (ret.subscription.startDate) {
+        ret.subscription.startDate = ret.subscription.startDate.toISOString();
+      }
+      if (ret.subscription.endDate) {
+        ret.subscription.endDate = ret.subscription.endDate.toISOString();
+      }
+    }
+
+    return ret;
+  },
+});
+
 module.exports = mongoose.model("Tenant", tenantSchema);

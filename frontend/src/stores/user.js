@@ -2,8 +2,11 @@ import { ref, computed } from "vue";
 import axios from "axios";
 
 // 从 localStorage 获取初始状态
-const user = ref(JSON.parse(localStorage.getItem("user")) || null);
-const token = ref(localStorage.getItem("token"));
+const storedUser = localStorage.getItem("user");
+const storedToken = localStorage.getItem("token");
+
+const user = ref(storedUser ? JSON.parse(storedUser) : null);
+const token = ref(storedToken);
 
 // 如果有token，设置axios默认headers
 if (token.value) {
@@ -20,6 +23,13 @@ const isSchoolAdmin = computed(() =>
   user.value?.roles?.includes("school_admin")
 );
 
+// 更新用户状态
+const updateUserState = (userData) => {
+  console.log("更新用户状态:", userData);
+  user.value = userData;
+  localStorage.setItem("user", JSON.stringify(userData));
+};
+
 // 用户相关的方法
 const login = async (username, password) => {
   try {
@@ -29,9 +39,8 @@ const login = async (username, password) => {
     });
     console.log("登录返回的用户数据:", data);
     token.value = data.token;
-    user.value = data.user;
+    updateUserState(data.user);
     localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
     axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
     return data;
   } catch (error) {
@@ -41,7 +50,7 @@ const login = async (username, password) => {
 
 const logout = () => {
   token.value = null;
-  user.value = null;
+  updateUserState(null);
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   delete axios.defaults.headers.common["Authorization"];
@@ -51,8 +60,7 @@ const fetchUserInfo = async () => {
   try {
     const { data } = await axios.get("/api/users/me");
     console.log("获取用户信息返回的数据:", data);
-    user.value = data;
-    localStorage.setItem("user", JSON.stringify(data));
+    updateUserState(data);
     return data;
   } catch (error) {
     throw error;

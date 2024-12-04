@@ -48,9 +48,8 @@
         <div class="text-lg">{{ pageTitle }}</div>
         <el-dropdown @command="handleCommand">
           <span class="flex items-center cursor-pointer">
-            <el-avatar size="small" class="mr-2">{{ userStore.user?.name?.[0] || userStore.user?.username?.[0] || "用"
-              }}</el-avatar>
-            <span>{{ userStore.user?.name || userStore.user?.username || "用户" }}</span>
+            <el-avatar size="small" class="mr-2">{{ currentUserName[0] || "用" }}</el-avatar>
+            <span>{{ currentUserName }}</span>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -86,6 +85,12 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const isSuperAdmin = computed(() => userStore.isSuperAdmin.value)
+
+// 计算用户显示名称
+const currentUserName = computed(() => {
+  console.log("当前用户数据:", userStore.user.value)
+  return userStore.user.value?.name || userStore.user.value?.username || "用户"
+})
 
 const pageTitle = computed(() => {
   const pathMap = {

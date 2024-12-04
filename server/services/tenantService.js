@@ -56,8 +56,6 @@ const initializeTenant = async (tenantData, adminData, schoolData) => {
 
     console.log("=== 开始创建管理员 ===");
     // 3. 创建租户管理员
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(adminData.password, salt);
     console.log("管理员数据:", {
       ...adminData,
       password: "[已加密]",
@@ -68,7 +66,6 @@ const initializeTenant = async (tenantData, adminData, schoolData) => {
 
     admin = await User.create({
       ...adminData,
-      password: hashedPassword,
       tenant: tenant._id,
       school: school._id,
       roles: ["tenant_admin", "school_admin"],
