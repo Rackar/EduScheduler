@@ -1,5 +1,6 @@
 const Course = require("../models/Course");
 const User = require("../models/User");
+const Class = require("../models/Class");
 
 // 获取所有课程
 exports.getAllCourses = async (req, res) => {
@@ -325,14 +326,11 @@ exports.batchImportCourses = async (req, res) => {
               }
             }
           } catch (error) {
-            console.warn(
-              `处理课程 ${courseData.name} 的周次信息时出错:`,
-              error
-            );
+            console.error(`解析周次信息失败: ${error.message}`);
           }
         }
 
-        // 1. 查找或创建教师
+        // 查找或创建教师
         let teacher = await User.findOne({
           username: courseData.teacherName,
           role: "teacher",
@@ -344,22 +342,36 @@ exports.batchImportCourses = async (req, res) => {
             password: "123456", // 默认密码
             role: "teacher",
             department: courseData.department,
-            teachingHours: {
-              current: 0,
-              min: 14,
-              max: 16,
-            },
           });
         }
 
-        // 2. 查找是否存在相同代码的课程
+        // 处理班级信息
+        let classIds = [];
+        if (courseData.className) {
+          const classNames = courseData.className
+            .split(",")
+            .map((name) => name.trim());
+          for (const className of classNames) {
+            let classObj = await Class.findOne({ name: className });
+            if (!classObj) {
+              classObj = await Class.create({
+                name: className,
+                department: courseData.department,
+                studentCount: parseInt(courseData.studentCount) || 0,
+                status: "active",
+              });
+            }
+            classIds.push(classObj._id);
+          }
+        }
+
+        // 查找现有课程
         const existingCourse = await Course.findOne({
           code: courseData.code,
           status: "active",
         });
 
-        let newCourse; // 声明在外部以便后续使用
-
+        let newCourse;
         if (existingCourse) {
           // 将现有课程标记为非活动
           existingCourse.status = "inactive";
@@ -378,7 +390,7 @@ exports.batchImportCourses = async (req, res) => {
             teacher: teacher._id,
             description: courseData.description || "",
             semester: courseData.semester || "2024春季",
-            className: courseData.className || "",
+            classes: classIds,
             studentCount: parseInt(courseData.studentCount) || 0,
             weeks,
             version: existingCourse.version + 1,
@@ -402,9 +414,10 @@ exports.batchImportCourses = async (req, res) => {
             teacher: teacher._id,
             description: courseData.description || "",
             semester: courseData.semester || "2024春季",
-            className: courseData.className || "",
+            classes: classIds,
             studentCount: parseInt(courseData.studentCount) || 0,
             weeks,
+            version: 1,
           });
 
           results.created.push({
