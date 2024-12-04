@@ -22,10 +22,44 @@ export default {
 
     const isNew = computed(() => route.path.includes("/new"))
 
-    // 格式化时间为 HH:mm 格式
-    const formatTimeStr = (timeStr) => {
-      if (!timeStr) return ""
-      return timeStr.substring(0, 5)
+    // 验证规则
+    const rules = {
+      name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
+    }
+
+    // 验证单个时段
+    const validateTimeSlot = (slot) => {
+      const errors = []
+      if (!slot.name) {
+        errors.push("时段名称不能为空")
+      }
+      if (!slot.startTime) {
+        errors.push("开始时间不能为空")
+      }
+      if (!slot.endTime) {
+        errors.push("结束时间不能为空")
+      }
+      if (slot.creditHours <= 0) {
+        errors.push("学时数必须大于0")
+      }
+      return errors
+    }
+
+    // 验证所有时段
+    const validateAllTimeSlots = () => {
+      const errors = []
+      const periods = ["morning", "afternoon", "evening"]
+
+      periods.forEach(period => {
+        template.value.periods[period].forEach((slot, index) => {
+          const slotErrors = validateTimeSlot(slot)
+          if (slotErrors.length > 0) {
+            errors.push(`${period === "morning" ? "上午" : period === "afternoon" ? "下午" : "晚上"}第${index + 1}个时段存在以下错误：\n${slotErrors.join("\n")}`)
+          }
+        })
+      })
+
+      return errors
     }
 
     // 获取模板数据
@@ -61,6 +95,19 @@ export default {
     }
 
     const saveTemplate = async () => {
+      // 验证模板名称
+      if (!template.value.name.trim()) {
+        ElMessage.warning("请输入模板名称")
+        return
+      }
+
+      // 验证时段
+      const errors = validateAllTimeSlots()
+      if (errors.length > 0) {
+        ElMessage.warning(errors.join("\n"))
+        return
+      }
+
       try {
         if (isNew.value) {
           await axios.post("/api/schedule-templates", template.value)
@@ -81,7 +128,8 @@ export default {
       router,
       addTimeSlot,
       removeTimeSlot,
-      saveTemplate
+      saveTemplate,
+      rules
     }
   }
 }
@@ -111,7 +159,7 @@ export default {
         <div class="space-y-4">
           <div>
             <span class="text-sm">模板名称</span>
-            <el-input v-model="template.name" placeholder="请输入模板名称" />
+            <el-input v-model="template.name" placeholder="请输入模板名称" :rules="rules.name" required />
           </div>
           <div>
             <span class="text-sm">描述</span>
@@ -135,20 +183,22 @@ export default {
             class="grid grid-cols-5 gap-4 items-end">
             <div>
               <span class="text-sm">时段名称</span>
-              <el-input v-model="slot.name" placeholder="如：第一节" />
+              <el-input v-model="slot.name" placeholder="如：第一节" required :class="{ 'is-error': !slot.name }" />
             </div>
             <div>
               <span class="text-sm">开始时间</span>
-              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" />
+              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
+                required :class="{ 'is-error': !slot.startTime }" />
             </div>
             <div>
               <span class="text-sm">结束时间</span>
-              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
-                :min-time="slot.startTime" />
+              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" required
+                :min-time="slot.startTime" :class="{ 'is-error': !slot.endTime }" />
             </div>
             <div>
               <span class="text-sm">学时数</span>
-              <el-input-number v-model="slot.creditHours" :min="0" :step="0.5" />
+              <el-input-number v-model="slot.creditHours" :min="0.5" :step="0.5" required
+                :class="{ 'is-error': slot.creditHours <= 0 }" />
             </div>
             <el-button type="danger" @click="removeTimeSlot('morning', index)">
               删除
@@ -172,20 +222,22 @@ export default {
             class="grid grid-cols-5 gap-4 items-end">
             <div>
               <span class="text-sm">时段名称</span>
-              <el-input v-model="slot.name" placeholder="如：第五节" />
+              <el-input v-model="slot.name" placeholder="如：第五节" required :class="{ 'is-error': !slot.name }" />
             </div>
             <div>
               <span class="text-sm">开始时间</span>
-              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" />
+              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
+                required :class="{ 'is-error': !slot.startTime }" />
             </div>
             <div>
               <span class="text-sm">结束时间</span>
-              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
-                :min-time="slot.startTime" />
+              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" required
+                :min-time="slot.startTime" :class="{ 'is-error': !slot.endTime }" />
             </div>
             <div>
               <span class="text-sm">学时数</span>
-              <el-input-number v-model="slot.creditHours" :min="0" :step="0.5" />
+              <el-input-number v-model="slot.creditHours" :min="0.5" :step="0.5" required
+                :class="{ 'is-error': slot.creditHours <= 0 }" />
             </div>
             <el-button type="danger" @click="removeTimeSlot('afternoon', index)">
               删除
@@ -209,20 +261,22 @@ export default {
             class="grid grid-cols-5 gap-4 items-end">
             <div>
               <span class="text-sm">时段名称</span>
-              <el-input v-model="slot.name" placeholder="如：第九节" />
+              <el-input v-model="slot.name" placeholder="如：第九节" required :class="{ 'is-error': !slot.name }" />
             </div>
             <div>
               <span class="text-sm">开始时间</span>
-              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" />
+              <el-time-select v-model="slot.startTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
+                required :class="{ 'is-error': !slot.startTime }" />
             </div>
             <div>
               <span class="text-sm">结束时间</span>
-              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间"
-                :min-time="slot.startTime" />
+              <el-time-select v-model="slot.endTime" start="06:00" step="00:05" end="23:00" placeholder="选择时间" required
+                :min-time="slot.startTime" :class="{ 'is-error': !slot.endTime }" />
             </div>
             <div>
               <span class="text-sm">学时数</span>
-              <el-input-number v-model="slot.creditHours" :min="0" :step="0.5" />
+              <el-input-number v-model="slot.creditHours" :min="0.5" :step="0.5" required
+                :class="{ 'is-error': slot.creditHours <= 0 }" />
             </div>
             <el-button type="danger" @click="removeTimeSlot('evening', index)">
               删除
@@ -233,3 +287,14 @@ export default {
     </div>
   </div>
 </template>
+
+<style scoped>
+.is-error {
+  border-color: var(--el-color-danger);
+}
+
+.is-error:focus {
+  border-color: var(--el-color-danger);
+  box-shadow: 0 0 0 2px rgba(var(--el-color-danger-rgb), 0.2);
+}
+</style>
