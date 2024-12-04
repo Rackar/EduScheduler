@@ -28,17 +28,46 @@
             <span>排课规则</span>
           </div>
         </template>
-        <el-form-item label="优先级">
-          <el-radio-group v-model="form.priority">
-            <el-radio label="teacher">教师优先</el-radio>
-            <el-radio label="classroom">教室优先</el-radio>
+        <el-form-item label="每日课程">
+          <el-input-number v-model="form.minDailyLessons" :min="1" :max="3" class="w-24" />
+          <span class="mx-2">至</span>
+          <el-input-number v-model="form.maxDailyLessons" :min="form.minDailyLessons" :max="5" class="w-24" />
+          <span class="ml-2">节</span>
+        </el-form-item>
+        <el-form-item label="课程分布">
+          <el-radio-group v-model="form.distribution">
+            <el-radio label="balanced">均衡分布</el-radio>
+            <el-radio label="concentrated">集中排课</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="教室分配">
-          <el-switch v-model="form.considerClassroom" active-text="需要分配教室" inactive-text="使用固定教室" />
+        <el-form-item label="单双周">
+          <el-switch v-model="form.allowAlternateWeeks" active-text="允许单双周" inactive-text="固定每周" />
         </el-form-item>
-        <el-form-item label="连堂课">
-          <el-switch v-model="form.allowContinuous" active-text="允许连堂" inactive-text="禁止连堂" />
+      </el-card>
+
+      <!-- 时段设置 -->
+      <el-card class="mb-4">
+        <template #header>
+          <div class="card-header">
+            <span>时段设置</span>
+          </div>
+        </template>
+        <el-form-item label="上午课程">
+          <el-checkbox-group v-model="form.morningSlots">
+            <el-checkbox label="1-2">第1-2节</el-checkbox>
+            <el-checkbox label="3-4">第3-4节</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="下午课程">
+          <el-checkbox-group v-model="form.afternoonSlots">
+            <el-checkbox label="5-6">第5-6节</el-checkbox>
+            <el-checkbox label="7-8">第7-8节</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="晚上课程">
+          <el-checkbox-group v-model="form.eveningSlots">
+            <el-checkbox label="9-10">第9-10节</el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
       </el-card>
 
@@ -51,8 +80,14 @@
           </div>
         </template>
         <template v-if="showAdvanced">
-          <el-form-item label="每日课时">
-            <el-input-number v-model="form.maxDailyLessons" :min="4" :max="12" class="w-32" />
+          <el-form-item label="优先级">
+            <el-radio-group v-model="form.priority">
+              <el-radio label="teacher">教师优先</el-radio>
+              <el-radio label="classroom">教室优先</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="教室分配">
+            <el-switch v-model="form.considerClassroom" active-text="需要分配教室" inactive-text="使用固定教室" />
           </el-form-item>
           <el-form-item label="避免时段">
             <el-select v-model="form.avoidTimeSlots" multiple collapse-tags class="w-full" placeholder="选择需要避免的时间段">
@@ -75,9 +110,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue"
+import { ref, watch } from "vue"
 import { ElMessage } from "element-plus"
-import { getScheduleTemplates } from "@/api/schedule"
+import { getScheduleTemplates, generateSchedule } from "@/api/schedule"
 
 const props = defineProps({
   modelValue: Boolean,
@@ -96,10 +131,15 @@ const form = ref({
   templateId: "",
   startWeek: 1,
   endWeek: 16,
+  minDailyLessons: 2,
+  maxDailyLessons: 3,
+  distribution: "balanced",
+  allowAlternateWeeks: true,
+  morningSlots: ["1-2", "3-4"],
+  afternoonSlots: ["5-6", "7-8"],
+  eveningSlots: [],
   priority: "teacher",
   considerClassroom: true,
-  allowContinuous: true,
-  maxDailyLessons: 8,
   avoidTimeSlots: [],
 })
 
@@ -136,6 +176,9 @@ watch(
   () => props.modelValue,
   (val) => {
     dialogVisible.value = val
+    if (val) {
+      loadTemplates()
+    }
   }
 )
 
@@ -154,12 +197,22 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    // TODO: 调用自动排课接口
-    const { data } = await generateSchedule(form.value)
+    // 处理时间段
+    const availableSlots = [
+      ...form.value.morningSlots,
+      ...form.value.afternoonSlots,
+      ...form.value.eveningSlots,
+    ]
 
+    const data = {
+      ...form.value,
+      availableSlots,
+    }
+
+    const result = await generateSchedule(data)
     ElMessage.success("排课成功")
     dialogVisible.value = false
-    emit("success", data)
+    emit("success", result.data)
   } catch (error) {
     console.error("自动排课失败:", error)
     ElMessage.error(error.response?.data?.message || "自动排课失败")
@@ -167,9 +220,4 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
-
-// 初始化
-onMounted(() => {
-  loadTemplates()
-})
 </script>
