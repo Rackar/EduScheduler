@@ -294,4 +294,20 @@
 
 按这个需求，帮我分析最适用的排课算法。先不需要写打码，仅仅说一下思路。(已完成)
 
-分析的不错。我将上面提到的数据放到了 server/mock 目录下。我希望你再新建一个 js 文件用来实现算法。全部使用这些 mock 数据作为初始输入值。按照需求分析的结果实现。
+分析的不错。我将上面提到的数据放到了 server/mock 目录下。我希望你再新建一个 js 文件用来实现算法。全部使用这些 mock 数据作为初始输入值。按照需求分析的结果实现。（已完成）
+
+不错，运行排课的结果为
+{
+courseId: '6751d3fd9fc1cc6a9cc2146b',
+classId: '6751d3fd9fc1cc6a9cc21449',
+teacherId: '6751d3fd9fc1cc6a9cc21468',
+timeSlot: {
+day: '1',
+period: '第一节大课',
+startTime: '08:00',
+endTime: '09:50',
+creditHours: 2
+},
+weeks: [ 19 ]
+}
+这样的结构，可以稍作调整。timeSlot 可以改成 timeSlotId，因为都是从学时模板中来的。然后这样的 Schema 放到数据库中，我已经新建一个 Schedule2.js 用来存储 mongoose 模型。(已完成)
