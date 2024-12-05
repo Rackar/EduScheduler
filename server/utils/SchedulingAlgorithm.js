@@ -19,6 +19,7 @@ class SchedulingAlgorithm {
 
     // 存储课程的排课计数
     this.courseScheduleCount = new Map(); // 课程已排课次数
+    this.weeklyScheduleCount = new Map(); // 每周的排课次数
   }
 
   // 生成课程表
@@ -43,8 +44,7 @@ class SchedulingAlgorithm {
     for (const course of sortedCourses) {
       console.log("处理课程:", course.name);
       const totalWeeklySlots = this.calculateWeeklySlots(course.hours || 0);
-      const totalNeededSlots =
-        totalWeeklySlots * (this.endWeek - this.startWeek + 1);
+      const totalNeededSlots = this.calculateTotalNeededSlots(course);
 
       // 检查是否已经为这门课程排够了课
       const currentScheduledCount =
@@ -66,17 +66,25 @@ class SchedulingAlgorithm {
 
       // 为每周分配时间段
       for (const week of weekRange) {
-        // 如果是单双周课程，检查是否需要在本周排课
-        if (this.allowAlternateWeeks && course.hours === 3) {
-          if (!this.shouldScheduleInWeek(week, course)) {
-            continue;
-          }
+        // 检查是否在课程的周次范围内
+        if (!this.isWeekInRange(week, course.weeks)) {
+          console.log(`第 ${week} 周不在课程 ${course.name} 的周次范围内`);
+          continue;
+        }
+
+        // 获取本周已排课次数
+        const weekKey = `${course.id}-${week}`;
+        const weeklyCount = this.weeklyScheduleCount.get(weekKey) || 0;
+        if (weeklyCount >= totalWeeklySlots) {
+          console.log(`课程 ${course.name} 在第 ${week} 周已达到周学时限制`);
+          continue;
         }
 
         const slotsNeeded = this.getSlotsNeededForWeek(
           week,
           course,
-          totalWeeklySlots
+          totalWeeklySlots,
+          weeklyCount
         );
         if (slotsNeeded === 0) continue;
 
@@ -122,6 +130,7 @@ class SchedulingAlgorithm {
 
           // 更新课程计数
           this.courseScheduleCount.set(course.id, updatedCount);
+          this.weeklyScheduleCount.set(weekKey, weeklyCount + 1);
 
           // 更新已分配时间记录
           this.markTimeSlotAsUsed(week, slot.day, slot.timeSlot, {
@@ -143,6 +152,51 @@ class SchedulingAlgorithm {
     return Math.ceil(weeklyHours / 2);
   }
 
+  // 计算总共需要的时间段数
+  calculateTotalNeededSlots(course) {
+    const weeklySlots = this.calculateWeeklySlots(course.hours || 0);
+    const totalWeeks = this.calculateTotalWeeks(course.weeks);
+    return weeklySlots * totalWeeks;
+  }
+
+  // 计算总周数
+  calculateTotalWeeks(weeks) {
+    if (!weeks || !weeks.start || !weeks.end) {
+      return this.endWeek - this.startWeek + 1;
+    }
+    return weeks.end - weeks.start + 1;
+  }
+
+  // 检查周次是否在范围内
+  isWeekInRange(week, weeks) {
+    if (!weeks || !weeks.start || !weeks.end) {
+      return true;
+    }
+    return week >= weeks.start && week <= weeks.end;
+  }
+
+  // 获取指定周次需要的时间段数
+  getSlotsNeededForWeek(week, course, totalWeeklySlots, weeklyCount) {
+    // 如果不在周次范围内，不需要排课
+    if (!this.isWeekInRange(week, course.weeks)) {
+      return 0;
+    }
+
+    // 计算本周还需要多少时段
+    const remainingSlots = totalWeeklySlots - weeklyCount;
+    if (remainingSlots <= 0) {
+      return 0;
+    }
+
+    // 如果是3学时的课程，需要特殊处理单双周
+    if (course.hours === 3 && this.allowAlternateWeeks) {
+      const slots = this.shouldScheduleInWeek(week, course);
+      return Math.min(slots, remainingSlots);
+    }
+
+    return remainingSlots;
+  }
+
   // 判断是否需要在指定周次排课（用于处理单双周）
   shouldScheduleInWeek(week, course) {
     if (course.hours !== 3) return true;
@@ -157,15 +211,6 @@ class SchedulingAlgorithm {
     } else {
       return isOddWeek ? 1 : 2;
     }
-  }
-
-  // 获取指定周次需要的时间段数
-  getSlotsNeededForWeek(week, course, weeklySlots) {
-    if (course.hours === 3) {
-      const slots = this.shouldScheduleInWeek(week, course);
-      return typeof slots === "number" ? slots : 0;
-    }
-    return weeklySlots;
   }
 
   // 查找可用时间段
