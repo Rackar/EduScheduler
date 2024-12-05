@@ -1,74 +1,83 @@
-<script>
-/**
- * @typedef {import('@/types/schedule').ScheduleTemplate} ScheduleTemplate
- */
+<template>
+  <el-dialog v-model="dialogVisible" title="作息时间预览" width="800px">
+    <el-table :data="timeSlotRows" border>
+      <el-table-column prop="type" label="时段" width="100">
+        <template #default="{ row }">
+          {{ getTypeLabel(row.type) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="名称" width="150" />
+      <el-table-column prop="time" label="时间">
+        <template #default="{ row }">
+          {{ row.startTime }} - {{ row.endTime }}
+        </template>
+      </el-table-column>
+    </el-table>
+  </el-dialog>
+</template>
 
-export default {
-  props: {
-    /** @type {ScheduleTemplate} */
-    template: {
-      type: Object,
-      required: true
-    }
+<script setup>
+import { ref, computed, watch } from "vue"
+
+const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
   },
-
-  methods: {
-    /**
-     * @param {string} time
-     * @returns {string}
-     */
-    formatTime(time) {
-      return time.substring(0, 5) // 只显示 HH:mm
-    }
+  templateData: {
+    type: Object,
+    default: () => ({})
   }
+})
+
+const emit = defineEmits(["update:modelValue"])
+
+// 对话框显示状态
+const dialogVisible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit("update:modelValue", val)
+})
+
+// 按类型分组并排序的时间段
+const timeSlotRows = computed(() => {
+  if (!props.templateData?.timeSlots) return []
+
+  return props.templateData.timeSlots
+    .map(slot => ({
+      ...slot,
+      type: slot.type || "other" // 确保有类型
+    }))
+    .sort((a, b) => {
+      // 首先按类型排序
+      const typeOrder = { morning: 1, afternoon: 2, evening: 3, other: 4 }
+      if (typeOrder[a.type] !== typeOrder[b.type]) {
+        return typeOrder[a.type] - typeOrder[b.type]
+      }
+      // 然后按开始时间排序
+      return a.startTime.localeCompare(b.startTime)
+    })
+})
+
+// 获取时段类型标签
+const getTypeLabel = (type) => {
+  const labels = {
+    morning: "上午",
+    afternoon: "下午",
+    evening: "晚上",
+    other: "其他"
+  }
+  return labels[type] || type
 }
 </script>
 
-<template>
-  <div class="grid grid-cols-3 gap-4">
-    <!-- 上午时段 -->
-    <div>
-      <h3 class="text-sm font-medium mb-2">上午</h3>
-      <div class="space-y-2">
-        <div v-for="slot in template.periods.morning" :key="slot.id"
-          class="flex items-center justify-between p-2 bg-gray-100 rounded-lg text-sm">
-          <span>{{ slot.name }}</span>
-          <div class="text-gray-500">
-            {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
-            <span class="ml-2">({{ slot.creditHours }}学时)</span>
-          </div>
-        </div>
-      </div>
-    </div>
+<style scoped>
+.el-table :deep(th) {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: bold;
+}
 
-    <!-- 下午时段 -->
-    <div>
-      <h3 class="text-sm font-medium mb-2">下午</h3>
-      <div class="space-y-2">
-        <div v-for="slot in template.periods.afternoon" :key="slot.id"
-          class="flex items-center justify-between p-2 bg-gray-100 rounded-lg text-sm">
-          <span>{{ slot.name }}</span>
-          <div class="text-gray-500">
-            {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
-            <span class="ml-2">({{ slot.creditHours }}学时)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 晚上时段 -->
-    <div>
-      <h3 class="text-sm font-medium mb-2">晚上</h3>
-      <div class="space-y-2">
-        <div v-for="slot in template.periods.evening" :key="slot.id"
-          class="flex items-center justify-between p-2 bg-gray-100 rounded-lg text-sm">
-          <span>{{ slot.name }}</span>
-          <div class="text-gray-500">
-            {{ formatTime(slot.startTime) }} - {{ formatTime(slot.endTime) }}
-            <span class="ml-2">({{ slot.creditHours }}学时)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+.el-table :deep(td) {
+  padding: 8px 0;
+}
+</style>

@@ -4,26 +4,23 @@ const timeSlotSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    trim: true,
   },
   startTime: {
     type: String,
     required: true,
+    match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/,
   },
   endTime: {
     type: String,
     required: true,
+    match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/,
   },
   creditHours: {
     type: Number,
     required: true,
     min: 0,
   },
-  linkedSlots: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TimeSlot",
-    },
-  ],
 });
 
 const scheduleTemplateSchema = new mongoose.Schema(
@@ -31,26 +28,29 @@ const scheduleTemplateSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
+      trim: true,
     },
-    description: String,
+    description: {
+      type: String,
+      trim: true,
+    },
     periods: {
       morning: [timeSlotSchema],
       afternoon: [timeSlotSchema],
       evening: [timeSlotSchema],
     },
-    isDefault: {
+    isActive: {
       type: Boolean,
       default: false,
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
     },
     school: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "School",
+      required: true,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
   },
@@ -59,16 +59,15 @@ const scheduleTemplateSchema = new mongoose.Schema(
   }
 );
 
-// 确保每个学校只有一个默认模板
+// 确保每个学校只有一个活动模板
 scheduleTemplateSchema.pre("save", async function (next) {
-  if (this.isDefault) {
+  if (this.isActive) {
     await this.constructor.updateMany(
       {
         school: this.school,
         _id: { $ne: this._id },
-        isDefault: true,
       },
-      { isDefault: false }
+      { isActive: false }
     );
   }
   next();

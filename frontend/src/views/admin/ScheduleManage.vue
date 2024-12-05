@@ -1,516 +1,204 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow">
-    <!-- 操作栏 -->
-    <div class="mb-4 flex justify-between items-center">
-      <div class="flex items-center space-x-4">
-        <el-select v-model="currentClass" placeholder="选择班级" class="w-40" @change="loadSchedule">
-          <el-option v-for="classItem in classOptions" :key="classItem.id" :label="classItem.name"
-            :value="classItem.id" />
-        </el-select>
-        <el-select v-model="currentWeek" placeholder="选择周次" class="w-32" @change="loadSchedule">
-          <el-option v-for="week in 20" :key="week" :label="`第${week}周`" :value="week" />
-        </el-select>
-        <el-radio-group v-model="viewType" size="small" @change="loadSchedule">
-          <el-radio-button label="week">周视图</el-radio-button>
-          <el-radio-button label="list">列表视图</el-radio-button>
-        </el-radio-group>
-      </div>
-      <div class="flex space-x-2">
-        <el-button type="primary" @click="autoScheduleVisible = true">
-          <el-icon>
-            <Plus />
-          </el-icon>自动排课
+  <div class="container mx-auto p-4">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">排课管理</h1>
+      <div class="space-x-2">
+        <el-button type="primary" @click="showAutoScheduleDialog = true">
+          自动排课
         </el-button>
-        <el-button type="success" @click="handleExport">
-          <el-icon>
-            <Download />
-          </el-icon>导出课表
-        </el-button>
+        <el-button type="success" @click="handleExport">导出课表</el-button>
       </div>
     </div>
 
-    <!-- 周视图课程表 -->
-    <template v-if="viewType === 'week'">
-      <div class="border rounded">
-        <!-- 表头 -->
-        <div class="grid grid-cols-6 bg-gray-50">
-          <div class="p-2 text-center border-r font-bold">时间</div>
-          <div v-for="day in weekDays" :key="day.value" class="p-2 text-center border-r font-bold">
-            {{ day.label }}
-          </div>
-        </div>
-
-        <!-- 课程格子 -->
-        <div v-loading="loading">
-          <div v-for="timeSlot in timeSlots" :key="timeSlot.value" class="grid grid-cols-6 border-t">
-            <div class="p-2 text-center border-r bg-gray-50">
-              {{ timeSlot.label }}
-            </div>
-            <div v-for="day in weekDays" :key="day.value" class="p-2 border-r min-h-[100px] relative"
-              @click="handleAddCourse(day.value, timeSlot.value)">
-              <template v-if="getScheduleItem(day.value, timeSlot.value)">
-                <div class="absolute inset-1 rounded bg-blue-100 p-2 cursor-pointer hover:shadow-lg transition-shadow"
-                  @click.stop="handleEditCourse(getScheduleItem(day.value, timeSlot.value))">
-                  <div class="text-sm font-bold">{{ getScheduleItem(day.value, timeSlot.value)?.course?.name || '未知课程'
-                    }}</div>
-                  <div class="text-xs text-gray-600">{{ getScheduleItem(day.value, timeSlot.value)?.teacher?.username ||
-                    '未知教师' }}
-                  </div>
-                  <div class="text-xs text-gray-600">{{ getClassroomInfo(getScheduleItem(day.value, timeSlot.value)) }}
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- 列表视图 -->
-    <template v-else>
-      <el-table :data="scheduleList" v-loading="loading" border stripe>
-        <el-table-column prop="week" label="周次" width="80">
-          <template #default="{ row }">
-            第{{ row.week }}周
-          </template>
-        </el-table-column>
-        <el-table-column prop="day" label="星期" width="100">
-          <template #default="{ row }">
-            {{ getDayLabel(row.day) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="timeSlot" label="时间段" width="100">
-          <template #default="{ row }">
-            {{ getTimeSlotLabel(row.timeSlot) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="course.name" label="课程">
-          <template #default="{ row }">
-            {{ row.course?.name || '未知课程' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="teacher.username" label="教师" width="100">
-          <template #default="{ row }">
-            {{ row.teacher?.username || '未知教师' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="class.name" label="班级" width="120">
-          <template #default="{ row }">
-            {{ row.class?.name || '未知班级' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="教室" width="150">
-          <template #default="{ row }">
-            {{ getClassroomInfo(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="{ row }">
-            <el-button-group>
-              <el-button type="primary" @click="handleEditCourse(row)" link>
-                <el-icon>
-                  <Edit />
-                </el-icon>编辑
-              </el-button>
-              <el-button type="danger" @click="handleDeleteCourse(row)" link>
-                <el-icon>
-                  <Delete />
-                </el-icon>删除
-              </el-button>
-            </el-button-group>
-          </template>
-        </el-table-column>
-      </el-table>
-    </template>
-
-    <!-- 课程表单对话框 -->
-    <el-dialog v-model="dialogVisible" :title="formType === 'add' ? '添加课程' : '编辑课程'" width="600px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="mt-4">
-        <el-form-item label="周次" prop="week" v-if="formType === 'add'">
-          <el-input-number v-model="form.week" :min="1" :max="20" />
-        </el-form-item>
-        <el-form-item label="星期" prop="day" v-if="formType === 'add'">
-          <el-select v-model="form.day" class="w-full">
-            <el-option v-for="day in weekDays" :key="day.value" :label="day.label" :value="day.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="时间段" prop="timeSlot" v-if="formType === 'add'">
-          <el-select v-model="form.timeSlot" class="w-full">
-            <el-option v-for="slot in timeSlots" :key="slot.value" :label="slot.label" :value="slot.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="课程" prop="courseId">
-          <el-select v-model="form.courseId" class="w-full" filterable remote :remote-method="searchCourses"
-            :loading="courseLoading">
-            <el-option v-for="item in courseOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="教师" prop="teacherId">
-          <el-select v-model="form.teacherId" class="w-full" filterable remote :remote-method="searchTeachers"
-            :loading="teacherLoading">
-            <el-option v-for="item in teacherOptions" :key="item.id" :label="item.username" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="班级" prop="classId">
-          <el-select v-model="form.classId" class="w-full">
-            <el-option v-for="item in classOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="教室" prop="classroomId">
-          <el-select v-model="form.classroomId" class="w-full" filterable remote :remote-method="searchClassrooms"
-            :loading="classroomLoading">
-            <el-option v-for="item in classroomOptions" :key="item.id" :label="`${item.building}-${item.room}`"
-              :value="item.id" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="flex justify-end">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit" :loading="submitting">
-            确定
+    <!-- 当前模板信息 -->
+    <el-alert v-if="!currentTemplate" type="warning" :closable="false" class="mb-4">
+      请先在作息时间模板管理中设置当前使用的模板
+    </el-alert>
+    <el-card v-else class="mb-4">
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span>当前使用的作息时间模板</span>
+          <el-button type="primary" link @click="router.push('/admin/schedule-templates')">
+            更换模板
           </el-button>
         </div>
       </template>
-    </el-dialog>
+      <div>
+        <p class="font-medium">{{ currentTemplate.name }}</p>
+        <p class="text-gray-500">{{ currentTemplate.description }}</p>
+      </div>
+    </el-card>
+
+    <!-- 课表展示 -->
+    <el-card>
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span>课表</span>
+          <div class="space-x-2">
+            <el-select v-model="currentWeek" placeholder="选择周次">
+              <el-option v-for="week in weekOptions" :key="week" :label="`第${week}周`" :value="week" />
+            </el-select>
+            <el-select v-model="currentClass" placeholder="选择班级">
+              <el-option v-for="cls in classes" :key="cls._id" :label="cls.name" :value="cls._id" />
+            </el-select>
+          </div>
+        </div>
+      </template>
+
+      <el-table :data="scheduleTableData" border>
+        <el-table-column prop="time" label="时间" width="150" />
+        <el-table-column v-for="day in ['周一', '周二', '周三', '周四', '周五']" :key="day" :label="day">
+          <template #default="{ row }">
+            <div v-if="row[day]" class="p-2 rounded" :class="getCellClass(row[day])">
+              <p class="font-medium">{{ row[day].courseName }}</p>
+              <p class="text-sm">{{ row[day].teacherName }}</p>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <!-- 自动排课对话框 -->
-    <AutoScheduleDialog v-model="autoScheduleVisible" @success="handleAutoScheduleSuccess" />
+    <AutoScheduleDialog v-model="showAutoScheduleDialog" :template="currentTemplate" @success="handleScheduleSuccess" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue"
-import { Download, Edit, Delete, Plus } from "@element-plus/icons-vue"
-import { ElMessage, ElMessageBox } from "element-plus"
+import { ref, onMounted, computed, watch } from "vue"
+import { useRouter } from "vue-router"
+import { ElMessage } from "element-plus"
 import AutoScheduleDialog from "@/components/AutoScheduleDialog.vue"
-import {
-  getSchedule,
-  generateSchedule,
-  adjustSchedule,
-  exportSchedule,
-  checkConflicts,
-  getTimeSlots,
-  getClassrooms,
-} from "@/api/schedule"
-import { getCourseList } from "@/api/course"
-import { getTeacherList } from "@/api/teacher"
-import { getClassList } from "@/api/class"
+import { getClasses } from "@/api/class"
+import { getSchedules } from "@/api/schedule"
+import { getCurrentTemplate } from "@/api/schedule"
 
-// 基础数据
-const weekDays = [
-  { label: "周一", value: "monday" },
-  { label: "周二", value: "tuesday" },
-  { label: "周三", value: "wednesday" },
-  { label: "周四", value: "thursday" },
-  { label: "周五", value: "friday" },
-]
-
-const timeSlots = [
-  { label: "第1-2节", value: "1-2" },
-  { label: "第3-4节", value: "3-4" },
-  { label: "第5-6节", value: "5-6" },
-  { label: "第7-8节", value: "7-8" },
-  { label: "第9-10节", value: "9-10" },
-]
-
-// 响应式数据
-const scheduleData = ref([])
-const loading = ref(false)
-const currentClass = ref("")
+const router = useRouter()
+const currentTemplate = ref(null)
+const showAutoScheduleDialog = ref(false)
 const currentWeek = ref(1)
-const viewType = ref("week")
+const currentClass = ref("")
+const classes = ref([])
+const schedules = ref([])
 
-// 计算属性
-const scheduleList = computed(() => {
-  if (!Array.isArray(scheduleData.value)) {
-    return []
-  }
-
-  let filtered = scheduleData.value
-
-  // 按班级筛选
-  if (currentClass.value) {
-    filtered = filtered.filter(item => item.class?.id === currentClass.value)
-  }
-
-  // 按周次筛选
-  if (viewType.value === "week") {
-    filtered = filtered.filter(item => Number(item.week) === Number(currentWeek.value))
-  }
-
-  return filtered
+// 周次选项
+const weekOptions = computed(() => {
+  return Array.from({ length: 20 }, (_, i) => i + 1)
 })
 
-// 加载课程表数据
-const loadSchedule = async () => {
+// 获取当前模板
+const fetchCurrentTemplate = async () => {
   try {
-    loading.value = true;
-    const params = {
-      classId: currentClass.value || undefined,
-      week: viewType.value === "week" ? currentWeek.value : undefined,
-    };
-    console.log("请求参数:", params);
-
-    const { data } = await getSchedule(params);
-    console.log("获取到的课表数据:", data);
-
-    scheduleData.value = Array.isArray(data) ? data : (data?.items || []);
-    console.log("处理后的课表数据:", scheduleData.value);
+    const { data } = await getCurrentTemplate()
+    currentTemplate.value = data
   } catch (error) {
-    console.error("加载课程表失败:", error);
-    ElMessage.error(error.response?.data?.message || "获取课表失败");
-    scheduleData.value = [];
-  } finally {
-    loading.value = false;
+    console.error("获取当前模板失败:", error)
+    ElMessage.error("获取当前模板失败")
   }
-};
+}
 
-// 班级选项
-const classOptions = ref([])
-const loadClasses = async () => {
+// 获取班级列表
+const fetchClasses = async () => {
   try {
-    const { data } = await getClassList()
-    classOptions.value = Array.isArray(data) ? data : (data?.items || [])
-    console.log("班级列表:", classOptions.value) // 添加日志
+    const { data } = await getClasses()
+    classes.value = data
+    if (data.length > 0) {
+      currentClass.value = data[0]._id
+    }
   } catch (error) {
-    console.error("加载班级列表失败:", error)
-    ElMessage.error(error.response?.data?.message || "获取班级列表失败")
-    classOptions.value = []
+    console.error("获取班级列表失败:", error)
+    ElMessage.error("获取班级列表失败")
   }
 }
 
-// 表单数据
-const dialogVisible = ref(false)
-const formType = ref('add')
-const formRef = ref(null)
-const submitting = ref(false)
-const form = ref({
-  week: 1,
-  day: 'monday',
-  timeSlot: '1-2',
-  courseId: '',
-  teacherId: '',
-  classId: '',
-  classroomId: ''
-})
-
-// 表单验证规则
-const rules = {
-  week: [{ required: true, message: '请选择周次', trigger: 'change' }],
-  day: [{ required: true, message: '请选择星期', trigger: 'change' }],
-  timeSlot: [{ required: true, message: '请选择时间段', trigger: 'change' }],
-  courseId: [{ required: true, message: '请选择课程', trigger: 'change' }],
-  teacherId: [{ required: true, message: '请选择教师', trigger: 'change' }],
-  classId: [{ required: true, message: '请选择班级', trigger: 'change' }],
-  classroomId: [{ required: true, message: '请选择教室', trigger: 'change' }]
-}
-
-// 选项数据
-const courseOptions = ref([])
-const teacherOptions = ref([])
-const classroomOptions = ref([])
-const courseLoading = ref(false)
-const teacherLoading = ref(false)
-const classroomLoading = ref(false)
-
-// 自动排课对话框
-const autoScheduleVisible = ref(false)
-
-// 处理自动排课成功
-const handleAutoScheduleSuccess = (data) => {
-  ElMessage.success(`成功生成 ${data.count} 条课程安排`)
-  loadSchedule()
-}
-
-// 搜索课程
-const searchCourses = async (query) => {
-  if (query !== '') {
-    courseLoading.value = true
-    try {
-      const res = await getCourseList({ query })
-      courseOptions.value = res.items
-    } catch (error) {
-      ElMessage.error('搜索课程失败')
-    } finally {
-      courseLoading.value = false
-    }
-  }
-}
-
-// 搜索教师
-const searchTeachers = async (query) => {
-  if (query !== '') {
-    teacherLoading.value = true
-    try {
-      const res = await getTeacherList({ query })
-      teacherOptions.value = res.items
-    } catch (error) {
-      ElMessage.error('搜索教师失败')
-    } finally {
-      teacherLoading.value = false
-    }
-  }
-}
-
-// 搜索教室
-const searchClassrooms = async (query) => {
-  if (query !== '') {
-    classroomLoading.value = true
-    try {
-      const res = await getClassrooms({ query })
-      classroomOptions.value = res.items
-    } catch (error) {
-      ElMessage.error('搜索教室失败')
-    } finally {
-      classroomLoading.value = false
-    }
-  }
-}
-
-// 辅助函数
-const getDayLabel = (day) => {
-  const found = weekDays.find(d => d.value === day)
-  return found ? found.label : day
-}
-
-const getTimeSlotLabel = (timeSlot) => {
-  const found = timeSlots.find(t => t.value === timeSlot)
-  return found ? found.label : timeSlot
-}
-
-const getScheduleItem = (day, timeSlot) => {
-  return scheduleList.value.find(
-    item => item.day === day && item.timeSlot === timeSlot
-  )
-}
-
-const getClassroomInfo = (schedule) => {
-  if (!schedule?.classroom) return "未分配教室"
-  return `${schedule.classroom.building}-${schedule.classroom.room}`
-}
-
-// 添加课程
-const handleAddCourse = (day, timeSlot) => {
-  formType.value = 'add'
-  form.value = {
-    week: currentWeek.value,
-    day,
-    timeSlot,
-    courseId: '',
-    teacherId: '',
-    classId: currentClass.value,
-    classroomId: ''
-  }
-  dialogVisible.value = true
-}
-
-// 编辑课程
-const handleEditCourse = (row) => {
-  if (!row?.course || !row?.teacher || !row?.class) {
-    ElMessage.warning("课程数据不完整，无法编辑")
-    return
-  }
-
-  formType.value = 'edit'
-  form.value = {
-    ...row,
-    courseId: row.course.id,
-    teacherId: row.teacher.id,
-    classId: row.class.id,
-    classroomId: row.classroom?.id,
-  }
-  dialogVisible.value = true
-}
-
-// 删除课程
-const handleDeleteCourse = async (row) => {
-  if (!row?.id) {
-    ElMessage.warning("课程数据不完整，无法删除")
-    return
-  }
+// 获取课表数据
+const fetchSchedules = async () => {
+  if (!currentClass.value || !currentWeek.value) return
 
   try {
-    await ElMessageBox.confirm('确定要删除该课程安排吗？', '提示', {
-      type: 'warning'
+    const { data } = await getSchedules({
+      classId: currentClass.value,
+      week: currentWeek.value
     })
-    await adjustSchedule({
-      id: row.id,
-      action: 'delete'
-    })
-    ElMessage.success('删除成功')
-    loadSchedule()
+    schedules.value = data
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
+    console.error("获取课表失败:", error)
+    ElMessage.error("获取课表失败")
   }
 }
 
-// 提交表单
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        // 检查时间冲突
-        const conflicts = await checkConflicts({
-          ...form.value,
-          id: formType.value === 'edit' ? form.value._id : undefined
-        })
-        if (conflicts.length > 0) {
-          ElMessage.warning('存在时间冲突，请重新选择时间')
-          return
+// 转换课表数据为表格格式
+const scheduleTableData = computed(() => {
+  if (!currentTemplate.value) return []
+
+  const timeSlots = currentTemplate.value.timeSlots
+  return timeSlots.map(slot => {
+    const row = {
+      time: `${slot.startTime}-${slot.endTime}\n${slot.name}`,
+    }
+
+      // 添加每天的课程
+      ;["周一", "周二", "周三", "周四", "周五"].forEach((day, index) => {
+        const schedule = schedules.value.find(s =>
+          s.timeSlotId === slot._id &&
+          s.day === index + 1
+        )
+
+        if (schedule) {
+          row[day] = {
+            courseName: schedule.courseName,
+            teacherName: schedule.teacherName,
+            status: schedule.status
+          }
         }
+      })
 
-        await adjustSchedule({
-          ...form.value,
-          action: formType.value === 'add' ? 'add' : 'update'
-        })
-        ElMessage.success(formType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
-        loadSchedule()
-      } catch (error) {
-        ElMessage.error(formType.value === 'add' ? '添加失败' : '更新失败')
-      } finally {
-        submitting.value = false
-      }
-    }
+    return row
   })
+})
+
+// 获取单元格样式
+const getCellClass = (cell) => {
+  if (!cell) return ""
+
+  const baseClass = "bg-opacity-20"
+  switch (cell.status) {
+    case "draft":
+      return `${baseClass} bg-blue-500`
+    case "confirmed":
+      return `${baseClass} bg-green-500`
+    case "conflict":
+      return `${baseClass} bg-red-500`
+    default:
+      return baseClass
+  }
+}
+
+// 自动排课成功回调
+const handleScheduleSuccess = () => {
+  fetchSchedules()
+  showAutoScheduleDialog.value = false
+  ElMessage.success("排课成功")
 }
 
 // 导出课表
-const handleExport = async () => {
-  try {
-    const params = {
-      week: viewType.value === 'week' ? currentWeek.value : undefined,
-      class: currentClass.value || undefined
-    }
-    const res = await exportSchedule(params)
-    // 处理文件下载
-    const blob = new Blob([res], { type: 'application/vnd.ms-excel' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `课程表_${new Date().getTime()}.xlsx`
-    link.click()
-    URL.revokeObjectURL(link.href)
-  } catch (error) {
-    ElMessage.error('导出失败')
-  }
+const handleExport = () => {
+  // TODO: 实现导出功能
+  ElMessage.info("导出功能开发中")
 }
 
 // 监听筛选条件变化
-watch(
-  [currentClass, currentWeek, viewType],
-  () => {
-    loadSchedule()
-  },
-  { immediate: true }
-)
+watch([currentWeek, currentClass], () => {
+  fetchSchedules()
+})
 
-// 初始化
 onMounted(() => {
-  loadClasses()
+  fetchCurrentTemplate()
+  fetchClasses()
 })
 </script>
+
+<style scoped>
+.el-table :deep(td) {
+  height: 100px;
+}
+</style>

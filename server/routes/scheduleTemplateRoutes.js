@@ -1,31 +1,34 @@
 const express = require("express");
 const router = express.Router();
+const scheduleTemplateController = require("../controllers/scheduleTemplateController");
 const { protect, schoolAdmin } = require("../middleware/authMiddleware");
-const {
-  createTemplate,
-  getTemplates,
-  getTemplateById,
-  updateTemplate,
-  deleteTemplate,
-  setDefaultTemplate,
-} = require("../controllers/scheduleTemplateController");
 
-// 获取模板列表
-router.get("/", protect, getTemplates);
+// 使用认证中间件保护所有路由
+router.use(protect);
 
-// 创建新模板
-router.post("/", protect, schoolAdmin, createTemplate);
+// 获取所有模板
+router.get("/", scheduleTemplateController.getTemplates);
 
 // 获取单个模板
-router.get("/:id", protect, getTemplateById);
+router.get("/:id", scheduleTemplateController.getTemplate);
 
-// 更新模板
-router.put("/:id", protect, schoolAdmin, updateTemplate);
+// 创建新模板 (需要学校管理员权限)
+router.post("/", schoolAdmin, scheduleTemplateController.createTemplate);
 
-// 删除模板
-router.delete("/:id", protect, schoolAdmin, deleteTemplate);
+// 更新模板 (需要学校管理员权限)
+router.put("/:id", schoolAdmin, scheduleTemplateController.updateTemplate);
 
-// 设置默认模板
-router.put("/:id/default", protect, schoolAdmin, setDefaultTemplate);
+// 删除模板 (需要学校管理员权限)
+router.delete("/:id", schoolAdmin, scheduleTemplateController.deleteTemplate);
+
+// 设置当前模板 (需要学校管理员权限)
+router.post(
+  "/:id/set-active",
+  schoolAdmin,
+  scheduleTemplateController.setActiveTemplate
+);
+
+// 获取当前活动模板
+router.get("/active/current", scheduleTemplateController.getCurrentTemplate);
 
 module.exports = router;

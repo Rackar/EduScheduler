@@ -10,15 +10,14 @@ export function getSchedule(params) {
 }
 
 // 获取作息时间模板列表
-export function getScheduleTemplates(params) {
+export function getScheduleTemplates() {
   return request({
     url: "/api/schedule-templates",
     method: "get",
-    params,
   });
 }
 
-// 获取作息时间模板详情
+// 获取单个作息时间模板
 export function getScheduleTemplate(id) {
   return request({
     url: `/api/schedule-templates/${id}`,
@@ -52,40 +51,47 @@ export function deleteScheduleTemplate(id) {
   });
 }
 
-// 生成课程表
-export function generateSchedule(data) {
+// 设置当前模板
+export function setActiveTemplate(id) {
   return request({
-    url: "/api/schedule/generate",
+    url: `/api/schedule-templates/${id}/set-active`,
     method: "post",
-    data,
   });
 }
 
-// 手动调整课程安排
-export function adjustSchedule(data) {
+// 获取当前活动模板
+export function getCurrentTemplate() {
   return request({
-    url: "/api/schedule/adjust",
-    method: "put",
-    data,
+    url: "/api/schedule-templates/active/current",
+    method: "get",
   });
 }
 
-// 检查时间冲突
-export function checkConflicts(data) {
+// 获取课表
+export function getSchedules(params) {
   return request({
-    url: "/api/schedule/check-conflicts",
-    method: "post",
-    data,
-  });
-}
-
-// 导出课程表
-export function exportSchedule(params) {
-  return request({
-    url: "/api/schedule/export",
+    url: "/api/schedules",
     method: "get",
     params,
-    responseType: "blob", // 用于文件下载
+  });
+}
+
+// 生成课表
+export function generateSchedule(data) {
+  return request({
+    url: "/api/schedules/generate",
+    method: "post",
+    data,
+  });
+}
+
+// 导出课表
+export function exportSchedule(params) {
+  return request({
+    url: "/api/schedules/export",
+    method: "get",
+    params,
+    responseType: "blob",
   });
 }
 

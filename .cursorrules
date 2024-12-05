@@ -44,5 +44,7 @@
       Important
       - 修改代码文件时，不要无故删除其他跟本次修改不相关的代码，尤其是在其他处有引用和已被导出使用的代码。
       - 收到多条修改需求时，可以一次只修改一条。然后提示继续再进行下一步修改，尤其是多个需求涉及多个文件的变更的，以方便调试和检查效果。
+      - 代码尽量使用中文注释，对关键代码和逻辑进行注释。
+      - 代码文件可以按功能拆分的细一些，但不要过于细碎，一个文件尽量只做一件事。
 
       Follow the official Vue.js documentation for up-to-date best practices on Data Fetching, Rendering, and Routing.
