@@ -1,50 +1,54 @@
 <template>
   <div class="container mx-auto p-4">
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold">排课管理</h1>
-      <div class="space-x-2">
-        <el-button type="primary" @click="showAutoScheduleDialog = true">
-          自动排课
-        </el-button>
-        <el-button type="success" @click="handleExport">导出课表</el-button>
-      </div>
+    <!-- 加载状态 -->
+    <div v-if="loading" class="flex justify-center items-center h-64">
+      <el-loading :fullscreen="false" />
     </div>
 
-    <!-- 当前模板信息 -->
-    <el-alert v-if="!currentTemplate" type="warning" :closable="false" class="mb-4">
-      请先在作息时间模板管理中设置当前使用的模板
-    </el-alert>
-    <el-card v-else class="mb-4">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span>当前使用的作息时间模板</span>
-          <el-button type="primary" link @click="router.push('/admin/schedule-templates')">
-            更换模板
+    <!-- 主要内容 -->
+    <template v-else>
+      <!-- 顶部操作栏 -->
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">排课管理</h1>
+        <div class="space-x-2">
+          <el-button type="primary" @click="showAutoScheduleDialog = true">
+            自动排课
           </el-button>
+          <el-button type="success" @click="handleExport">导出课表</el-button>
         </div>
-      </template>
-      <div>
-        <p class="font-medium">{{ currentTemplate.name }}</p>
-        <p class="text-gray-500">{{ currentTemplate.description }}</p>
       </div>
-    </el-card>
 
-    <!-- 课表展示 -->
-    <el-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span>课表</span>
-          <div class="space-x-2">
-            <el-select v-model="currentWeek" placeholder="选择周次">
-              <el-option v-for="week in weekOptions" :key="week" :label="`第${week}周`" :value="week" />
-            </el-select>
-            <el-select v-model="currentClass" placeholder="选择班级">
-              <el-option v-for="cls in classes" :key="cls._id" :label="cls.name" :value="cls._id" />
-            </el-select>
+      <!-- 当前模板信息 -->
+
+      <el-card class="mb-4">
+        <template #header>
+          <div class="flex justify-between items-center">
+            <span v-if="!currentTemplate">请先设置学时模板</span>
+            <span v-else>当前使用的学时模板：</span>
+            <el-button type="primary" link @click="router.push('/admin/schedule-templates')">
+              更换模板
+            </el-button>
           </div>
-        </div>
-      </template>
+        </template>
+        <div v-if="currentTemplate">
+          <p class="font-medium">{{ currentTemplate.name }}
+            <span class="text-gray-500 pl-4">({{ currentTemplate.description }})</span>
+          </p>
 
+        </div>
+      </el-card>
+
+      <!-- 筛选条件 -->
+      <div class="mb-4 flex space-x-4">
+        <el-select v-model="currentWeek" placeholder="选择周次">
+          <el-option v-for="week in weekOptions" :key="week" :label="`第${week}周`" :value="week" />
+        </el-select>
+        <el-select v-model="currentClass" placeholder="选择班级">
+          <el-option v-for="cls in classes" :key="cls.id" :label="cls.name" :value="cls.id" />
+        </el-select>
+      </div>
+
+      <!-- 课表 -->
       <el-table :data="scheduleTableData" border>
         <el-table-column prop="time" label="时间" width="150" />
         <el-table-column v-for="day in ['周一', '周二', '周三', '周四', '周五']" :key="day" :label="day">
@@ -56,10 +60,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
-
-    <!-- 自动排课对话框 -->
-    <AutoScheduleDialog v-model="showAutoScheduleDialog" :template="currentTemplate" @success="handleScheduleSuccess" />
+    </template>
   </div>
 </template>
 
@@ -79,20 +80,66 @@ const currentWeek = ref(1)
 const currentClass = ref("")
 const classes = ref([])
 const schedules = ref([])
+const loading = ref(false)
 
 // 周次选项
 const weekOptions = computed(() => {
   return Array.from({ length: 20 }, (_, i) => i + 1)
 })
 
+// 基础数据初始化
+const scheduleData = ref([])
+
+// 转换课表数据为表格格式
+const scheduleTableData = computed(() => {
+  // 确保有模板和时间段数据
+  if (!currentTemplate.value?.periods) return []
+
+  // 获取所有时间段
+  const timeSlots = [
+    ...(currentTemplate.value.periods.morning || []),
+    ...(currentTemplate.value.periods.afternoon || []),
+    ...(currentTemplate.value.periods.evening || [])
+  ]
+
+  return timeSlots.map(slot => {
+    const row = {
+      time: `${slot.startTime}-${slot.endTime}\n${slot.name}`,
+    }
+
+      // 添加每天的课程
+      ;['周一', '周二', '周三', '周四', '周五'].forEach((day, index) => {
+        const schedule = scheduleData.value.find(s =>
+          s.timeSlotId === slot.id &&
+          s.day === index + 1
+        )
+
+        if (schedule) {
+          row[day] = {
+            courseName: schedule.courseName,
+            teacherName: schedule.teacherName,
+            status: schedule.status
+          }
+        } else {
+          row[day] = null // 确保每个单元格都有值，即使是空值
+        }
+      })
+
+    return row
+  })
+})
+
 // 获取当前模板
 const fetchCurrentTemplate = async () => {
   try {
+    loading.value = true
     const { data } = await getCurrentTemplate()
     currentTemplate.value = data
   } catch (error) {
     console.error("获取当前模板失败:", error)
     ElMessage.error("获取当前模板失败")
+  } finally {
+    loading.value = false
   }
 }
 
@@ -115,46 +162,20 @@ const fetchSchedules = async () => {
   if (!currentClass.value || !currentWeek.value) return
 
   try {
+    loading.value = true
     const { data } = await getSchedules({
       classId: currentClass.value,
       week: currentWeek.value
     })
-    schedules.value = data
+    scheduleData.value = data || [] // 确保始终是数组
   } catch (error) {
     console.error("获取课表失败:", error)
     ElMessage.error("获取课表失败")
+    scheduleData.value = [] // 出错时设置为空数组
+  } finally {
+    loading.value = false
   }
 }
-
-// 转换课表数据为表格格式
-const scheduleTableData = computed(() => {
-  if (!currentTemplate.value) return []
-
-  const timeSlots = currentTemplate.value.timeSlots
-  return timeSlots.map(slot => {
-    const row = {
-      time: `${slot.startTime}-${slot.endTime}\n${slot.name}`,
-    }
-
-      // 添加每天的课程
-      ;["周一", "周二", "周三", "周四", "周五"].forEach((day, index) => {
-        const schedule = schedules.value.find(s =>
-          s.timeSlotId === slot._id &&
-          s.day === index + 1
-        )
-
-        if (schedule) {
-          row[day] = {
-            courseName: schedule.courseName,
-            teacherName: schedule.teacherName,
-            status: schedule.status
-          }
-        }
-      })
-
-    return row
-  })
-})
 
 // 获取单元格样式
 const getCellClass = (cell) => {
@@ -186,11 +207,17 @@ const handleExport = () => {
   ElMessage.info("导出功能开发中")
 }
 
-// 监听筛选条件变化
-watch([currentWeek, currentClass], () => {
-  fetchSchedules()
-})
+// 监听数据变化
+watch(
+  [currentWeek, currentClass],
+  () => {
+    if (currentClass.value && currentWeek.value) {
+      fetchSchedules()
+    }
+  }
+)
 
+// 页面加载时初始化数据
 onMounted(() => {
   fetchCurrentTemplate()
   fetchClasses()

@@ -71,7 +71,7 @@ app.use("/api/classrooms", require("./routes/classroomRoutes"));
 app.use("/api/exchanges", require("./routes/exchangeRoutes"));
 app.use("/api/classes", require("./routes/classRoutes"));
 app.use("/api/timeslots", require("./routes/timeSlotRoutes"));
-app.use("/api/schedule", require("./routes/scheduleRoutes"));
+app.use("/api/schedules", require("./routes/scheduleRoutes"));
 app.use("/api/schedule-templates", require("./routes/scheduleTemplateRoutes"));
 app.use("/api/seed", require("./routes/seedRoutes"));
 

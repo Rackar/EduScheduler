@@ -12,6 +12,7 @@
           {{ row.startTime }} - {{ row.endTime }}
         </template>
       </el-table-column>
+      <el-table-column prop="creditHours" label="学时" width="100" align="center" />
     </el-table>
   </el-dialog>
 </template>
@@ -38,24 +39,52 @@ const dialogVisible = computed({
   set: (val) => emit("update:modelValue", val)
 })
 
-// 按类型分组并排序的时间段
+// 将嵌套的时间段数据转换为扁平数组
 const timeSlotRows = computed(() => {
-  if (!props.templateData?.timeSlots) return []
+  if (!props.templateData?.periods) return []
 
-  return props.templateData.timeSlots
-    .map(slot => ({
-      ...slot,
-      type: slot.type || "other" // 确保有类型
-    }))
-    .sort((a, b) => {
-      // 首先按类型排序
-      const typeOrder = { morning: 1, afternoon: 2, evening: 3, other: 4 }
-      if (typeOrder[a.type] !== typeOrder[b.type]) {
-        return typeOrder[a.type] - typeOrder[b.type]
-      }
-      // 然后按开始时间排序
-      return a.startTime.localeCompare(b.startTime)
+  const rows = []
+
+  // 处理上午时间段
+  if (props.templateData.periods.morning) {
+    props.templateData.periods.morning.forEach(slot => {
+      rows.push({
+        ...slot,
+        type: 'morning'
+      })
     })
+  }
+
+  // 处理下午时间段
+  if (props.templateData.periods.afternoon) {
+    props.templateData.periods.afternoon.forEach(slot => {
+      rows.push({
+        ...slot,
+        type: 'afternoon'
+      })
+    })
+  }
+
+  // 处理晚上时间段
+  if (props.templateData.periods.evening) {
+    props.templateData.periods.evening.forEach(slot => {
+      rows.push({
+        ...slot,
+        type: 'evening'
+      })
+    })
+  }
+
+  // 按时间排序
+  return rows.sort((a, b) => {
+    // 首先按类型排序
+    const typeOrder = { morning: 1, afternoon: 2, evening: 3 }
+    if (typeOrder[a.type] !== typeOrder[b.type]) {
+      return typeOrder[a.type] - typeOrder[b.type]
+    }
+    // 然后按开始时间排序
+    return a.startTime.localeCompare(b.startTime)
+  })
 })
 
 // 获取时段类型标签
@@ -63,8 +92,7 @@ const getTypeLabel = (type) => {
   const labels = {
     morning: "上午",
     afternoon: "下午",
-    evening: "晚上",
-    other: "其他"
+    evening: "晚上"
   }
   return labels[type] || type
 }

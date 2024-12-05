@@ -1,14 +1,5 @@
 import request from "@/utils/request";
 
-// 获取课程表
-export function getSchedule(params) {
-  return request({
-    url: "/api/schedule",
-    method: "get",
-    params,
-  });
-}
-
 // 获取作息时间模板列表
 export function getScheduleTemplates() {
   return request({
