@@ -1,354 +1,275 @@
 class SchedulingAlgorithm {
-  constructor(options) {
-    this.templateId = options.templateId;
-    this.startWeek = options.startWeek;
-    this.endWeek = options.endWeek;
-    this.minDailyLessons = options.minDailyLessons || 2;
-    this.maxDailyLessons = options.maxDailyLessons || 3;
-    this.distribution = options.distribution || "balanced";
-    this.allowAlternateWeeks = options.allowAlternateWeeks || true;
-    this.availableSlots = options.availableSlots || [];
-    this.priority = options.priority || "teacher";
-    this.considerClassroom = options.considerClassroom || true;
-    this.avoidTimeSlots = options.avoidTimeSlots || [];
-
-    // 存储已分配的时间段
-    this.teacherSchedule = new Map(); // 教师已排课时间
-    this.classSchedule = new Map(); // 班级已排课时间
-    this.roomSchedule = new Map(); // 教室已排课时间
-
-    // 存储课程的排课计数
-    this.courseScheduleCount = new Map(); // 课程已排课次数
-    this.weeklyScheduleCount = new Map(); // 每周的排课次数
-  }
-
-  // 生成课程表
-  async generate(courses, teachers, classrooms, template) {
-    console.log("开始生成课表...");
-    console.log("课程数量:", courses.length);
-    console.log("教师数量:", teachers.length);
-    console.log("教室数量:", classrooms.length);
-
-    const schedule = [];
-    const weekRange = Array.from(
-      { length: this.endWeek - this.startWeek + 1 },
-      (_, i) => this.startWeek + i
-    );
-    const days = ["monday", "tuesday", "wednesday", "thursday", "friday"];
-
-    // 按课时数排序课程
-    const sortedCourses = [...courses].sort(
-      (a, b) => (b.hours || 0) - (a.hours || 0)
-    );
-
-    for (const course of sortedCourses) {
-      console.log("处理课程:", course.name);
-      const totalWeeklySlots = this.calculateWeeklySlots(course.hours || 0);
-      const totalNeededSlots = this.calculateTotalNeededSlots(course);
-
-      // 检查是否已经为这门课程排够了课
-      const currentScheduledCount =
-        this.courseScheduleCount.get(course.id) || 0;
-      if (currentScheduledCount >= totalNeededSlots) {
-        console.log(`课程 ${course.name} 已排满所需课时`);
-        continue;
-      }
-
-      const teacher = teachers.find((t) => t.id === course.teacherId);
-      const classroom = this.considerClassroom
-        ? classrooms.find((r) => r.id === course.classroomId)
-        : null;
-
-      if (!teacher) {
-        console.warn(`未找到课程 ${course.name} 的教师`);
-        continue;
-      }
-
-      // 为每周分配时间段
-      for (const week of weekRange) {
-        // 检查是否在课程的周次范围内
-        if (!this.isWeekInRange(week, course.weeks)) {
-          console.log(`第 ${week} 周不在课程 ${course.name} 的周次范围内`);
-          continue;
-        }
-
-        // 获取本周已排课次数
-        const weekKey = `${course.id}-${week}`;
-        const weeklyCount = this.weeklyScheduleCount.get(weekKey) || 0;
-        if (weeklyCount >= totalWeeklySlots) {
-          console.log(`课程 ${course.name} 在第 ${week} 周已达到周学时限制`);
-          continue;
-        }
-
-        const slotsNeeded = this.getSlotsNeededForWeek(
-          week,
-          course,
-          totalWeeklySlots,
-          weeklyCount
-        );
-        if (slotsNeeded === 0) continue;
-
-        console.log(
-          `查找第 ${week} 周的可用时间段，需要 ${slotsNeeded} 个时段`
-        );
-
-        // 查找可用时间段
-        const availableSlots = this.findAvailableSlots(
-          week,
-          days,
-          teacher,
-          course.classId,
-          classroom,
-          slotsNeeded
-        );
-
-        if (availableSlots.length < slotsNeeded) {
-          console.warn(`无法为课程 ${course.name} 找到足够的时间段`);
-          continue;
-        }
-
-        // 分配时间段
-        for (let i = 0; i < slotsNeeded; i++) {
-          // 检查是否已经达到总课时数
-          const updatedCount =
-            (this.courseScheduleCount.get(course.id) || 0) + 1;
-          if (updatedCount > totalNeededSlots) {
-            console.log(`课程 ${course.name} 已达到总课时数限制`);
-            break;
-          }
-
-          const slot = availableSlots[i];
-          schedule.push({
-            courseId: course.id,
-            teacherId: teacher.id,
-            classId: course.classId,
-            classroomId: classroom?.id,
-            week,
-            day: slot.day,
-            timeSlot: slot.timeSlot,
-          });
-
-          // 更新课程计数
-          this.courseScheduleCount.set(course.id, updatedCount);
-          this.weeklyScheduleCount.set(weekKey, weeklyCount + 1);
-
-          // 更新已分配时间记录
-          this.markTimeSlotAsUsed(week, slot.day, slot.timeSlot, {
-            teacherId: teacher.id,
-            classId: course.classId,
-            classroomId: classroom?.id,
-          });
-        }
-      }
-    }
-
-    console.log("课表生成完成，总计:", schedule.length);
-    return schedule;
-  }
-
-  // 计算每周需要的时间段数
-  calculateWeeklySlots(weeklyHours) {
-    // 职高模板下，一节课是两个学时
-    return Math.ceil(weeklyHours / 2);
-  }
-
-  // 计算总共需要的时间段数
-  calculateTotalNeededSlots(course) {
-    const weeklySlots = this.calculateWeeklySlots(course.hours || 0);
-    const totalWeeks = this.calculateTotalWeeks(course.weeks);
-    return weeklySlots * totalWeeks;
-  }
-
-  // 计算总周数
-  calculateTotalWeeks(weeks) {
-    if (!weeks || !weeks.start || !weeks.end) {
-      return this.endWeek - this.startWeek + 1;
-    }
-    return weeks.end - weeks.start + 1;
-  }
-
-  // 检查周次是否在范围内
-  isWeekInRange(week, weeks) {
-    if (!weeks || !weeks.start || !weeks.end) {
-      return true;
-    }
-    return week >= weeks.start && week <= weeks.end;
-  }
-
-  // 获取指定周次需要的时间段数
-  getSlotsNeededForWeek(week, course, totalWeeklySlots, weeklyCount) {
-    // 如果不在周次范围内，不需要排课
-    if (!this.isWeekInRange(week, course.weeks)) {
-      return 0;
-    }
-
-    // 计算本周还需要多少时段
-    const remainingSlots = totalWeeklySlots - weeklyCount;
-    if (remainingSlots <= 0) {
-      return 0;
-    }
-
-    // 如果是3学时的课程，需要特殊处理单双周
-    if (course.hours === 3 && this.allowAlternateWeeks) {
-      const slots = this.shouldScheduleInWeek(week, course);
-      return Math.min(slots, remainingSlots);
-    }
-
-    return remainingSlots;
-  }
-
-  // 判断是否需要在指定周次排课（用于处理单双周）
-  shouldScheduleInWeek(week, course) {
-    if (course.hours !== 3) return true;
-
-    // 对于3学时的课程，实现单双周排课
-    const isOddWeek = week % 2 === 1;
-    // 随机决定是单周排2节还是双周排2节
-    const moreInOddWeek = Math.random() < 0.5;
-
-    if (moreInOddWeek) {
-      return isOddWeek ? 2 : 1;
+  constructor(courses = [], options = {}) {
+    if (!Array.isArray(courses)) {
+      console.warn("课程参数不是数组，将使用空数组");
+      this.courses = [];
     } else {
-      return isOddWeek ? 1 : 2;
+      this.courses = courses;
     }
+
+    this.schedules = [];
+    this.startWeek = options.startWeek || 1;
+    this.endWeek = options.endWeek || 20;
+    this.courseTimeSlots = new Map(); // 记录每门课的固定时间段
+    this.usedSlots = new Map(); // 记录已使用的时间段
+
+    // 按周学时数从大到小排序课程
+    this.courses.sort((a, b) => (b.hours || 0) - (a.hours || 0));
+
+    console.log(`初始化排课算法，课程数量: ${this.courses.length}`);
+    console.log(`排课周次范围: 第${this.startWeek}周 到 第${this.endWeek}周`);
   }
 
-  // 查找可用时间段
-  findAvailableSlots(week, days, teacher, classId, classroom, slotsNeeded) {
-    if (!teacher || !teacher.id) {
-      console.warn("教师对象无效:", teacher);
-      return [];
+  // 评分函数：评估时间段的适合程度
+  evaluateTimeSlot(course, week, day, timeSlot, existingSlots) {
+    let score = 100;
+
+    // 1. 检查是否与已有的固定时间段相邻
+    const hasAdjacentSlot = existingSlots.some(
+      (slot) =>
+        slot.dayOfWeek === day && Math.abs(slot.timeSlot - timeSlot) === 1
+    );
+    if (hasAdjacentSlot) score += 20;
+
+    // 2. 优先选择上午的时间段
+    if (timeSlot <= 4) score += 10;
+
+    // 3. 避免课程安排在一天的最后时段
+    if (timeSlot === 5) score -= 10;
+
+    // 4. 尽量避免同一天安排过多课程
+    const sameDaySlots = existingSlots.filter((slot) => slot.dayOfWeek === day);
+    if (sameDaySlots.length >= 2) score -= 15;
+
+    // 5. 优先选择周一到周四的时间段
+    if (day === 5) score -= 5;
+
+    return score;
+  }
+
+  // 寻找最佳时间段
+  async findBestTimeSlot(course, week, existingSlots) {
+    let bestSlot = null;
+    let bestScore = -1;
+
+    // 优先尝试固定时间段
+    for (const slot of existingSlots) {
+      const schedule = {
+        course: course._id,
+        teacher: course.teacher,
+        classes: course.classes,
+        week,
+        dayOfWeek: slot.dayOfWeek,
+        timeSlot: slot.timeSlot,
+      };
+
+      if (await this.checkSlotAvailability(schedule)) {
+        const score = this.evaluateTimeSlot(
+          course,
+          week,
+          slot.dayOfWeek,
+          slot.timeSlot,
+          existingSlots
+        );
+        if (score > bestScore) {
+          bestScore = score;
+          bestSlot = slot;
+        }
+      }
     }
 
-    if (!classId) {
-      console.warn("班级ID无效");
-      return [];
-    }
+    if (bestSlot) return bestSlot;
 
-    const availableSlots = [];
-
-    // 根据分布策略排序时间段
-    const sortedDays =
-      this.distribution === "concentrated"
-        ? days
-        : this.shuffleArray([...days]);
-
-    for (const day of sortedDays) {
-      // 检查当天已安排的课程数
-      const dailyLessons = this.countDailyLessons(week, day, classId);
-      if (dailyLessons >= this.maxDailyLessons) continue;
-
-      for (const timeSlot of this.availableSlots) {
-        // 跳过需要避免的时间段
-        if (this.avoidTimeSlots.includes(timeSlot)) continue;
-
-        // 检查时间段是否可用
+    // 寻找新的时间段
+    for (let day = 1; day <= 5; day++) {
+      for (let slot = 1; slot <= 5; slot++) {
+        // 检查是否与已选时间段冲突
         if (
-          this.isTimeSlotAvailable(
+          existingSlots.some((s) => s.dayOfWeek === day && s.timeSlot === slot)
+        ) {
+          continue;
+        }
+
+        const schedule = {
+          course: course._id,
+          teacher: course.teacher,
+          classes: course.classes,
+          week,
+          dayOfWeek: day,
+          timeSlot: slot,
+        };
+
+        if (await this.checkSlotAvailability(schedule)) {
+          const score = this.evaluateTimeSlot(
+            course,
             week,
             day,
-            timeSlot,
-            teacher,
-            classId,
-            classroom
-          )
-        ) {
-          availableSlots.push({ day, timeSlot });
-          if (availableSlots.length === slotsNeeded) {
-            return availableSlots;
+            slot,
+            existingSlots
+          );
+          if (score > bestScore) {
+            bestScore = score;
+            bestSlot = { dayOfWeek: day, timeSlot: slot };
           }
         }
       }
     }
 
-    return availableSlots;
+    return bestSlot;
+  }
+
+  async generate() {
+    try {
+      if (!Array.isArray(this.courses) || this.courses.length === 0) {
+        console.warn("没有需要排课的课程");
+        return [];
+      }
+
+      // 获取本周需要排课的课程
+      for (let week = this.startWeek; week <= this.endWeek; week++) {
+        console.log(`开始处理第 ${week} 周的课程安排`);
+
+        const coursesThisWeek = this.courses.filter(
+          (course) =>
+            course.weeks &&
+            course.weeks.start <= week &&
+            course.weeks.end >= week
+        );
+
+        console.log(
+          `第 ${week} 周需要排课的课程数量: ${coursesThisWeek.length}`
+        );
+
+        for (const course of coursesThisWeek) {
+          const courseKey = course._id.toString();
+          const weeklyHours = course.hours || 0;
+
+          if (weeklyHours === 0) {
+            console.warn(
+              `课程 ${course.name} (${courseKey}) 的周学时为0，跳过`
+            );
+            continue;
+          }
+
+          console.log(`处理课程: ${course.name}, 周学时: ${weeklyHours}`);
+
+          // 检查这门课是否已有固定时间段
+          let fixedSlots = this.courseTimeSlots.get(courseKey);
+
+          if (!fixedSlots) {
+            // 如果没有固定时间段，寻找新的可用时间段
+            fixedSlots = [];
+            for (let i = 0; i < weeklyHours; i++) {
+              const slot = await this.findBestTimeSlot(
+                course,
+                week,
+                fixedSlots
+              );
+              if (slot) {
+                fixedSlots.push(slot);
+              } else {
+                console.warn(`无法为课程 ${course.name} 找到足够的时间段`);
+                break;
+              }
+            }
+            // 记录这门课的固定时间段
+            if (fixedSlots.length === weeklyHours) {
+              this.courseTimeSlots.set(courseKey, fixedSlots);
+              console.log(
+                `为课程 ${course.name} 设置了固定时间段:`,
+                fixedSlots
+              );
+            }
+          }
+
+          // 使用固定时间段创建课程安排
+          for (const slot of fixedSlots) {
+            const schedule = {
+              course: course._id,
+              teacher: course.teacher,
+              classes: course.classes,
+              week,
+              dayOfWeek: slot.dayOfWeek,
+              timeSlot: slot.timeSlot,
+              status: "draft",
+            };
+
+            // 检查时间段是否已被占用
+            const isSlotAvailable = await this.checkSlotAvailability(schedule);
+            if (isSlotAvailable) {
+              this.schedules.push(schedule);
+              this.markSlotAsUsed(schedule);
+              console.log(
+                `成功安排课程 ${course.name} 在第 ${week} 周星期${slot.dayOfWeek} 第${slot.timeSlot}节`
+              );
+            } else {
+              // 如果固定时间段被占用，尝试找新的时间段
+              const newSlot = await this.findBestTimeSlot(course, week, []);
+              if (newSlot) {
+                schedule.dayOfWeek = newSlot.dayOfWeek;
+                schedule.timeSlot = newSlot.timeSlot;
+                this.schedules.push(schedule);
+                this.markSlotAsUsed(schedule);
+                console.log(
+                  `为课程 ${course.name} 找到替代时间段: 星期${newSlot.dayOfWeek} 第${newSlot.timeSlot}节`
+                );
+              } else {
+                console.warn(
+                  `无法为课程 ${course.name} 在第 ${week} 周找到替代时间段`
+                );
+              }
+            }
+          }
+        }
+      }
+
+      console.log(`课表生成完成，总计生成 ${this.schedules.length} 条排课记录`);
+      return this.schedules;
+    } catch (error) {
+      console.error("生成课表失败:", error);
+      throw error;
+    }
   }
 
   // 检查时间段是否可用
-  isTimeSlotAvailable(week, day, timeSlot, teacher, classId, classroom) {
-    if (!teacher || !teacher.id) {
-      console.warn("教师对象无效:", teacher);
-      return false;
-    }
+  async checkSlotAvailability(schedule) {
+    const { week, dayOfWeek, timeSlot, teacher, classes } = schedule;
+    const key = `${week}-${dayOfWeek}-${timeSlot}`;
 
-    if (!classId) {
-      console.warn("班级ID无效");
-      return false;
-    }
-
-    const timeKey = `${week}-${day}-${timeSlot}`;
-
-    // 检查教师是否可用
-    if (
-      this.teacherSchedule.has(teacher.id) &&
-      this.teacherSchedule.get(teacher.id).has(timeKey)
-    ) {
-      return false;
-    }
-
-    // 检查班级是否可用
-    if (
-      this.classSchedule.has(classId) &&
-      this.classSchedule.get(classId).has(timeKey)
-    ) {
-      return false;
-    }
-
-    // 检查教室是否可用
-    if (
-      classroom &&
-      classroom.id &&
-      this.roomSchedule.has(classroom.id) &&
-      this.roomSchedule.get(classroom.id).has(timeKey)
-    ) {
-      return false;
+    // 检查该时间段是否已被使用
+    const usedSlot = this.usedSlots.get(key);
+    if (usedSlot) {
+      // 检查教师冲突
+      if (
+        usedSlot.some(
+          (s) => s.teacher && s.teacher.toString() === teacher?.toString()
+        )
+      ) {
+        return false;
+      }
+      // 检查班级冲突
+      if (
+        usedSlot.some((s) =>
+          s.classes?.some((c1) =>
+            classes?.some((c2) => c1.toString() === c2.toString())
+          )
+        )
+      ) {
+        return false;
+      }
     }
 
     return true;
   }
 
   // 标记时间段为已使用
-  markTimeSlotAsUsed(week, day, timeSlot, { teacherId, classId, classroomId }) {
-    const timeKey = `${week}-${day}-${timeSlot}`;
+  markSlotAsUsed(schedule) {
+    const { week, dayOfWeek, timeSlot } = schedule;
+    const key = `${week}-${dayOfWeek}-${timeSlot}`;
 
-    // 更新教师时间表
-    if (!this.teacherSchedule.has(teacherId)) {
-      this.teacherSchedule.set(teacherId, new Set());
-    }
-    this.teacherSchedule.get(teacherId).add(timeKey);
-
-    // 更新班级时间表
-    if (!this.classSchedule.has(classId)) {
-      this.classSchedule.set(classId, new Set());
-    }
-    this.classSchedule.get(classId).add(timeKey);
-
-    // 更新教室时间表
-    if (classroomId) {
-      if (!this.roomSchedule.has(classroomId)) {
-        this.roomSchedule.set(classroomId, new Set());
-      }
-      this.roomSchedule.get(classroomId).add(timeKey);
-    }
-  }
-
-  // 计算某天已安排的课程数
-  countDailyLessons(week, day, classId) {
-    if (!this.classSchedule.has(classId)) return 0;
-
-    const schedule = this.classSchedule.get(classId);
-    return Array.from(schedule).filter((timeKey) =>
-      timeKey.startsWith(`${week}-${day}-`)
-    ).length;
-  }
-
-  // 工具方法：随机打乱数组
-  shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+    const usedSlot = this.usedSlots.get(key) || [];
+    usedSlot.push(schedule);
+    this.usedSlots.set(key, usedSlot);
   }
 }
 

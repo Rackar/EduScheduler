@@ -103,122 +103,66 @@ exports.getSchedule = async (req, res) => {
 // 生成课表
 exports.generateSchedule = async (req, res) => {
   try {
-    const {
-      templateId,
-      startWeek,
-      endWeek,
-      minDailyLessons,
-      maxDailyLessons,
-      distribution,
-      allowAlternateWeeks,
-      availableSlots,
-      priority,
-      considerClassroom,
-      avoidTimeSlots,
-    } = req.body;
+    const { startWeek = 1, endWeek = 20 } = req.body;
 
-    // 检查用户认证和学校信息
-    if (!req.user || !req.user.school) {
-      return res.status(401).json({ message: "未授权访问或缺少学校信息" });
-    }
+    console.log("开始查询课程数据");
+    console.log("租户ID:", req.user.tenant);
+    console.log("学校ID:", req.user.school);
 
-    // 获取所有必要数据
-    const [teachers, courses, classrooms, template] = await Promise.all([
-      User.find({ roles: { $in: ["teacher"] }, school: req.user.school }),
-      Course.find({ school: req.user.school })
-        .populate("teacher")
-        .populate("classes"),
-      Classroom.find({ status: "active", school: req.user.school }),
-      ScheduleTemplate.findOne({
-        _id: templateId,
-        school: req.user.school,
-      }),
-    ]);
-
-    if (!template) {
-      return res.status(400).json({ message: "作息时间板不存在" });
-    }
-
-    // 转换数据格式，确保 id 字段存在
-    const formattedTeachers = teachers.map((t) => ({
-      id: t._id.toString(),
-      ...t.toObject(),
-    }));
-
-    // 为每个课程的每个班级创建一个排课任务
-    const formattedCourses = [];
-    for (const course of courses) {
-      if (!course.classes || course.classes.length === 0) {
-        console.warn(`课程 ${course.name} 没有关联的班级，跳过`);
-        continue;
-      }
-
-      for (const cls of course.classes) {
-        formattedCourses.push({
-          id: `${course._id.toString()}_${cls._id.toString()}`,
-          name: course.name,
-          hours: course.hours,
-          teacherId: course.teacher?._id.toString(),
-          classId: cls._id.toString(),
-          classroomId: course.classroomId?.toString(),
-          ...course.toObject(),
-        });
-      }
-    }
-
-    const formattedClassrooms = classrooms.map((r) => ({
-      id: r._id.toString(),
-      ...r.toObject(),
-    }));
-
-    console.log("准备数据完成:");
-    console.log("- 教师数量:", formattedTeachers.length);
-    console.log("- 课程数量:", formattedCourses.length);
-    console.log("- 教室数量:", formattedClassrooms.length);
-
-    // 创建排课算法实例
-    const scheduler = new SchedulingAlgorithm({
-      templateId,
-      startWeek,
-      endWeek,
-      minDailyLessons,
-      maxDailyLessons,
-      distribution,
-      allowAlternateWeeks,
-      availableSlots,
-      priority,
-      considerClassroom,
-      avoidTimeSlots,
-    });
-
-    // 运行算法
-    const scheduleItems = await scheduler.generate(
-      formattedCourses,
-      formattedTeachers,
-      formattedClassrooms,
-      template
-    );
-
-    // 添加学校和租户ID，并转换回真实的课程ID
-    const schedule = scheduleItems.map((item) => ({
-      courseId: item.courseId.split("_")[0], // 获取真实的课程ID
-      teacherId: item.teacherId,
-      classId: item.classId,
-      classroomId: item.classroomId,
-      week: item.week,
-      day: item.day,
-      timeSlot: item.timeSlot,
-      school: req.user.school,
+    // 获取需要排课的课程
+    const courses = await Course.find({
       tenant: req.user.tenant,
-      templateId,
-    }));
-
-    // 保存排课结果
-    await Schedule.deleteMany({
-      week: { $gte: startWeek, $lte: endWeek },
       school: req.user.school,
+      status: "active",
+    }).populate("teacher classes");
+
+    console.log(`找到 ${courses.length} 门需要排课的课程`);
+
+    if (courses.length > 0) {
+      console.log("课程示例:", {
+        name: courses[0].name,
+        hours: courses[0].hours,
+        weeks: courses[0].weeks,
+        teacher: courses[0].teacher?.name,
+        classes: courses[0].classes?.map((c) => c.name),
+      });
+    }
+
+    if (!courses.length) {
+      return res.json({
+        message: "没有找到需要排课的课程",
+        count: 0,
+        schedule: [],
+      });
+    }
+
+    // 初始化排课算法
+    const algorithm = new SchedulingAlgorithm(courses, {
+      startWeek,
+      endWeek,
     });
-    await Schedule.insertMany(schedule);
+
+    // 生成课表
+    const schedule = await algorithm.generate();
+    console.log(`生成了 ${schedule.length} 条排课记录`);
+
+    // 保存课表
+    await Schedule.deleteMany({
+      tenant: req.user.tenant,
+      school: req.user.school,
+      status: "draft",
+    });
+
+    if (schedule.length > 0) {
+      const scheduleWithTenant = schedule.map((item) => ({
+        ...item,
+        tenant: req.user.tenant,
+        school: req.user.school,
+      }));
+
+      await Schedule.insertMany(scheduleWithTenant);
+      console.log("成功保存课表");
+    }
 
     res.json({
       message: "排课成功",
@@ -227,7 +171,10 @@ exports.generateSchedule = async (req, res) => {
     });
   } catch (error) {
     console.error("生成课表失败:", error);
-    res.status(500).json({ message: error.message || "生成课表失败" });
+    res.status(500).json({
+      message: "生成课表失败",
+      error: error.message,
+    });
   }
 };
 

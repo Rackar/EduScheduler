@@ -130,7 +130,7 @@ const formRef = ref(null)
 const form = ref({
   templateId: "",
   startWeek: 1,
-  endWeek: 16,
+  endWeek: 20,
   minDailyLessons: 2,
   maxDailyLessons: 3,
   distribution: "balanced",
@@ -139,7 +139,7 @@ const form = ref({
   afternoonSlots: ["5-6", "7-8"],
   eveningSlots: [],
   priority: "teacher",
-  considerClassroom: true,
+  considerClassroom: false,
   avoidTimeSlots: [],
 })
 
