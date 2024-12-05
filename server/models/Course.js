@@ -95,4 +95,22 @@ courseSchema.set("toJSON", {
   },
 });
 
+// 静态方法：解析课时字符串
+courseSchema.statics.parseHours = function (hoursString) {
+  if (!hoursString) return null;
+
+  // 处理简单的数字格式
+  if (/^\d+$/.test(hoursString)) {
+    return parseInt(hoursString);
+  }
+
+  // 处理 "2:0-0.0" 或 "2.0-0.0" 格式
+  const match = hoursString.toString().match(/^(\d+(?:\.\d+)?)[:\-]?/);
+  if (match) {
+    return parseInt(match[1]);
+  }
+
+  return null;
+};
+
 module.exports = mongoose.model("Course", courseSchema);

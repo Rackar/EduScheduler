@@ -38,19 +38,29 @@ const handleUpload = async (file) => {
             throw new Error(`第 ${index + 2} 行缺少教师姓名`)
           }
 
+          // 解析课时信息
+          let hours = row["周学时"] || row["课时"] || row["hours"] || "2"
+          // 处理 "2:0-0.0" 或 "2.0-0.0" 格式
+          const hoursMatch = hours.toString().match(/^(\d+(?:\.\d+)?)[:\-]?/)
+          if (hoursMatch) {
+            hours = parseInt(hoursMatch[1])
+          } else {
+            hours = 2 // 默认值
+          }
+
           return {
             name: row["课程名称"] || row["name"] || "",
             code: row["课程代码"] || row["code"] || "",
             teacherName,
             department: row["开课院系"] || row["department"] || "",
-            credit: row["学分"] || row["credit"] || "2",
-            hours: row["课时"] || row["hours"] || "32",
+            credit: parseFloat(row["学分"] || row["credit"] || "2"),
+            hours,
             type: row["课程类型"] || row["type"] || "必修课",
             weeks: row["上课周次"] || row["weeks"] || "1-20",
             className: row["上课班级"] || row["班级"] || row["class"] || row["className"] || "",
             description: row["课程描述"] || row["description"] || "",
             semester: row["学期"] || row["semester"] || "",
-            studentCount: row["学生人数"] || row["studentCount"] || "0"
+            studentCount: parseInt(row["学生人数"] || row["studentCount"] || "0")
           }
         })
 

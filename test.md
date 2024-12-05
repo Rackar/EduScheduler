@@ -26,3 +26,5 @@ curl -X POST http://localhost:3000/api/tenants -H "Content-Type: application/jso
 }
 }
 }'
+
+终于恢复到导入正常了，庆祝一下。下步开始研究如何自动排课。现在我们的

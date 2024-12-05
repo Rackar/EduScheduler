@@ -63,6 +63,7 @@ classSchema.statics.parseClassNames = function (
   for (const major of majors) {
     let department, gradeStr, classNumberStr;
 
+    // 处理范围班级，如 "工程测量技术23级1-3班"
     let rangeMatch = major.match(/^(.+?)(\d{2})级(\d+)-(\d+)班$/);
     if (rangeMatch) {
       const [, dept, grade, start, end] = rangeMatch;
@@ -84,37 +85,41 @@ classSchema.statics.parseClassNames = function (
           studentCount: avgStudentCount,
         });
       }
-    } else {
-      let basicMatch = major.match(/^(.+?)(\d{2})级(\d+)班$/);
-      if (basicMatch) {
-        const [, dept, grade, classNum] = basicMatch;
-        department = dept;
-        const gradeYear = 2000 + parseInt(grade);
-        const classNumber = parseInt(classNum);
+      continue;
+    }
 
-        classNames.push({
-          name: major,
-          department,
-          grade: gradeYear,
-          classNumber,
-          studentCount: parseInt(studentCount) || 0,
-        });
-      } else {
-        basicMatch = major.match(/^(.+?)(\d+)班$/);
-        if (basicMatch) {
-          const [, dept, classNum] = basicMatch;
-          department = dept;
-          const classNumber = parseInt(classNum);
+    // 处理单个班级，如 "工程测量技术23级1班" 或 "建筑工程技术(学徒制)23级1班"
+    let basicMatch = major.match(/^(.+?)(\d{2})级(\d+)班$/);
+    if (basicMatch) {
+      const [, dept, grade, classNum] = basicMatch;
+      department = dept;
+      const gradeYear = 2000 + parseInt(grade);
+      const classNumber = parseInt(classNum);
 
-          classNames.push({
-            name: major,
-            department,
-            grade: new Date().getFullYear(),
-            classNumber,
-            studentCount: parseInt(studentCount) || 0,
-          });
-        }
-      }
+      classNames.push({
+        name: major, // 使用完整的原始名称
+        department,
+        grade: gradeYear,
+        classNumber,
+        studentCount: parseInt(studentCount) || 0,
+      });
+      continue;
+    }
+
+    // 处理特殊格式，如 "建筑工程技术(3+2高本)23级惠州学院班"
+    let specialMatch = major.match(/^(.+?)(\d{2})级(.+?)班$/);
+    if (specialMatch) {
+      const [, dept, grade, suffix] = specialMatch;
+      department = dept;
+      const gradeYear = 2000 + parseInt(grade);
+
+      classNames.push({
+        name: major, // 使用完整的原始名称
+        department,
+        grade: gradeYear,
+        classNumber: 1, // 默认为1班
+        studentCount: parseInt(studentCount) || 0,
+      });
     }
   }
 
