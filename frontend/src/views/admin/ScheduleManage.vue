@@ -4,8 +4,8 @@
     <div class="mb-4 flex justify-between items-center">
       <div class="flex items-center space-x-4">
         <el-select v-model="currentClass" placeholder="选择班级" class="w-40" @change="loadSchedule">
-          <el-option v-for="classItem in classOptions" :key="classItem._id" :label="classItem.name"
-            :value="classItem._id" />
+          <el-option v-for="classItem in classOptions" :key="classItem.id" :label="classItem.name"
+            :value="classItem.id" />
         </el-select>
         <el-select v-model="currentWeek" placeholder="选择周次" class="w-32" @change="loadSchedule">
           <el-option v-for="week in 20" :key="week" :label="`第${week}周`" :value="week" />
@@ -51,8 +51,10 @@
               <template v-if="getScheduleItem(day.value, timeSlot.value)">
                 <div class="absolute inset-1 rounded bg-blue-100 p-2 cursor-pointer hover:shadow-lg transition-shadow"
                   @click.stop="handleEditCourse(getScheduleItem(day.value, timeSlot.value))">
-                  <div class="text-sm font-bold">{{ getScheduleItem(day.value, timeSlot.value).course.name }}</div>
-                  <div class="text-xs text-gray-600">{{ getScheduleItem(day.value, timeSlot.value).teacher.username }}
+                  <div class="text-sm font-bold">{{ getScheduleItem(day.value, timeSlot.value)?.course?.name || '未知课程'
+                    }}</div>
+                  <div class="text-xs text-gray-600">{{ getScheduleItem(day.value, timeSlot.value)?.teacher?.username ||
+                    '未知教师' }}
                   </div>
                   <div class="text-xs text-gray-600">{{ getClassroomInfo(getScheduleItem(day.value, timeSlot.value)) }}
                   </div>
@@ -82,9 +84,21 @@
             {{ getTimeSlotLabel(row.timeSlot) }}
           </template>
         </el-table-column>
-        <el-table-column prop="course.name" label="课程" />
-        <el-table-column prop="teacher.username" label="教师" width="100" />
-        <el-table-column prop="class.name" label="班级" width="120" />
+        <el-table-column prop="course.name" label="课程">
+          <template #default="{ row }">
+            {{ row.course?.name || '未知课程' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="teacher.username" label="教师" width="100">
+          <template #default="{ row }">
+            {{ row.teacher?.username || '未知教师' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="class.name" label="班级" width="120">
+          <template #default="{ row }">
+            {{ row.class?.name || '未知班级' }}
+          </template>
+        </el-table-column>
         <el-table-column label="教室" width="150">
           <template #default="{ row }">
             {{ getClassroomInfo(row) }}
@@ -128,25 +142,25 @@
         <el-form-item label="课程" prop="courseId">
           <el-select v-model="form.courseId" class="w-full" filterable remote :remote-method="searchCourses"
             :loading="courseLoading">
-            <el-option v-for="item in courseOptions" :key="item._id" :label="item.name" :value="item._id" />
+            <el-option v-for="item in courseOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="教师" prop="teacherId">
           <el-select v-model="form.teacherId" class="w-full" filterable remote :remote-method="searchTeachers"
             :loading="teacherLoading">
-            <el-option v-for="item in teacherOptions" :key="item._id" :label="item.username" :value="item._id" />
+            <el-option v-for="item in teacherOptions" :key="item.id" :label="item.username" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="班级" prop="classId">
           <el-select v-model="form.classId" class="w-full">
-            <el-option v-for="item in classOptions" :key="item._id" :label="item.name" :value="item._id" />
+            <el-option v-for="item in classOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="教室" prop="classroomId">
           <el-select v-model="form.classroomId" class="w-full" filterable remote :remote-method="searchClassrooms"
             :loading="classroomLoading">
-            <el-option v-for="item in classroomOptions" :key="item._id" :label="`${item.building}-${item.room}`"
-              :value="item._id" />
+            <el-option v-for="item in classroomOptions" :key="item.id" :label="`${item.building}-${item.room}`"
+              :value="item.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -231,22 +245,26 @@ const scheduleList = computed(() => {
 // 加载课程表数据
 const loadSchedule = async () => {
   try {
-    loading.value = true
+    loading.value = true;
     const params = {
       classId: currentClass.value || undefined,
       week: viewType.value === "week" ? currentWeek.value : undefined,
-    }
-    const { data } = await getSchedule(params)
-    scheduleData.value = Array.isArray(data) ? data : (data?.items || [])
-    console.log("课程表数据:", scheduleData.value) // 添加日志
+    };
+    console.log("请求参数:", params);
+
+    const { data } = await getSchedule(params);
+    console.log("获取到的课表数据:", data);
+
+    scheduleData.value = Array.isArray(data) ? data : (data?.items || []);
+    console.log("处理后的课表数据:", scheduleData.value);
   } catch (error) {
-    console.error("加载课程表失败:", error)
-    ElMessage.error(error.response?.data?.message || "获取课程表失败")
-    scheduleData.value = []
+    console.error("加载课程表失败:", error);
+    ElMessage.error(error.response?.data?.message || "获取课表失败");
+    scheduleData.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 班级选项
 const classOptions = ref([])
@@ -389,25 +407,35 @@ const handleAddCourse = (day, timeSlot) => {
 
 // 编辑课程
 const handleEditCourse = (row) => {
+  if (!row?.course || !row?.teacher || !row?.class) {
+    ElMessage.warning("课程数据不完整，无法编辑")
+    return
+  }
+
   formType.value = 'edit'
   form.value = {
     ...row,
-    courseId: row.course._id,
-    teacherId: row.teacher._id,
-    classId: row.class?._id,
-    classroomId: row.classroom?._id
+    courseId: row.course.id,
+    teacherId: row.teacher.id,
+    classId: row.class.id,
+    classroomId: row.classroom?.id,
   }
   dialogVisible.value = true
 }
 
 // 删除课程
 const handleDeleteCourse = async (row) => {
+  if (!row?.id) {
+    ElMessage.warning("课程数据不完整，无法删除")
+    return
+  }
+
   try {
     await ElMessageBox.confirm('确定要删除该课程安排吗？', '提示', {
       type: 'warning'
     })
     await adjustSchedule({
-      id: row._id,
+      id: row.id,
       action: 'delete'
     })
     ElMessage.success('删除成功')

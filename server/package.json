@@ -9,6 +9,7 @@
     "init:superadmin": "node scripts/initSuperAdmin.js",
     "clean": "node scripts/cleanData.js",
     "cc": "node scripts/clearDatabase.js",
+    "cs": "node scripts/clearSchedule.js",
     "fix:emails": "node scripts/fixTeacherEmails.js"
   },
   "dependencies": {

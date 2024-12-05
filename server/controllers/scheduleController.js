@@ -10,20 +10,90 @@ const XLSX = require("xlsx");
 exports.getSchedule = async (req, res) => {
   try {
     const { week, classId } = req.query;
+    console.log("查询参数:", { week, classId });
+    console.log("当前用户:", {
+      school: req.user.school,
+      tenant: req.user.tenant,
+    });
+
     const query = {
-      tenantId: req.user.tenantId,
+      school: req.user.school,
       ...(week ? { week: parseInt(week) } : {}),
       ...(classId ? { classId } : {}),
     };
 
+    console.log("查询条件:", query);
+
     const schedule = await Schedule.find(query)
-      .populate("courseId")
-      .populate("teacherId")
-      .populate("classId")
-      .populate("classroomId")
+      .populate({
+        path: "courseId",
+        select: "name code hours type",
+        model: "Course",
+      })
+      .populate({
+        path: "teacherId",
+        select: "username name email",
+        model: "User",
+      })
+      .populate({
+        path: "classId",
+        select: "name department grade classNumber",
+        model: "Class",
+      })
+      .populate({
+        path: "classroomId",
+        select: "building room capacity",
+        model: "Classroom",
+      })
       .sort({ week: 1, day: 1, timeSlot: 1 });
 
-    res.json(schedule);
+    console.log("查询结果数量:", schedule.length);
+
+    // 转换数据格式
+    const formattedSchedule = schedule.map((item) => ({
+      id: item._id.toString(),
+      week: item.week,
+      day: item.day,
+      timeSlot: item.timeSlot,
+      course: item.courseId
+        ? {
+            id: item.courseId._id.toString(),
+            name: item.courseId.name,
+            code: item.courseId.code,
+            hours: item.courseId.hours,
+            type: item.courseId.type,
+          }
+        : null,
+      teacher: item.teacherId
+        ? {
+            id: item.teacherId._id.toString(),
+            username: item.teacherId.username,
+            name: item.teacherId.name,
+            email: item.teacherId.email,
+          }
+        : null,
+      class: item.classId
+        ? {
+            id: item.classId._id.toString(),
+            name: item.classId.name,
+            department: item.classId.department,
+            grade: item.classId.grade,
+            classNumber: item.classId.classNumber,
+          }
+        : null,
+      classroom: item.classroomId
+        ? {
+            id: item.classroomId._id.toString(),
+            building: item.classroomId.building,
+            room: item.classroomId.room,
+            capacity: item.classroomId.capacity,
+          }
+        : null,
+    }));
+
+    console.log("返回数据数量:", formattedSchedule.length);
+
+    res.json(formattedSchedule);
   } catch (error) {
     console.error("获取课表失败:", error);
     res.status(500).json({ message: "获取课表失败" });
@@ -66,7 +136,7 @@ exports.generateSchedule = async (req, res) => {
     ]);
 
     if (!template) {
-      return res.status(400).json({ message: "作息时间模板不存在" });
+      return res.status(400).json({ message: "作息时间板不存在" });
     }
 
     // 转换数据格式，确保 id 字段存在
