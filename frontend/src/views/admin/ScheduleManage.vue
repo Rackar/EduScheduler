@@ -7,6 +7,8 @@
 
     <!-- 主要内容 -->
     <template v-else>
+      <AutoScheduleDialog v-model="showAutoScheduleDialog" @success="handleScheduleSuccess" />
+
       <!-- 顶部操作栏 -->
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold">排课管理</h1>

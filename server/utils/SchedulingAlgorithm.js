@@ -1,5 +1,5 @@
 class SchedulingAlgorithm {
-  constructor(courses = [], template = null, options = {}) {
+  constructor(courses = [], options = {}) {
     if (!Array.isArray(courses)) {
       console.warn("课程参数不是数组，将使用空数组");
       this.courses = [];
@@ -7,26 +7,48 @@ class SchedulingAlgorithm {
       this.courses = courses;
     }
 
-    if (!template) {
-      throw new Error("作息时间模板是必需的");
+    if (options.template) {
+      this.template = options.template;
     }
-    this.template = template;
 
     this.schedules = [];
     this.startWeek = options.startWeek || 1;
     this.endWeek = options.endWeek || 20;
+    this.availableSlots = options.availableSlots;
     this.courseTimeSlots = new Map(); // 记录每门课的固定时间段
     this.usedSlots = new Map(); // 记录已使用的时间段
 
     // 从模板中获取时间段
-    this.timeSlots = this.template.timeSlots.map((slot) => ({
-      id: slot._id,
-      start: slot.startTime,
-      end: slot.endTime,
-      name: slot.name,
-      type: slot.type, // 上午/下午/晚上
-      duration: this.calculateDuration(slot.startTime, slot.endTime),
-    }));
+    // this.timeSlots = this.template.periods.map((slot) => ({
+    //   id: slot._id,
+    //   start: slot.startTime,
+    //   end: slot.endTime,
+    //   name: slot.name,
+    //   type: slot.type, // 上午/下午/晚上
+    //   duration: this.calculateDuration(slot.startTime, slot.endTime),
+    // }));
+    const flattenAndFilterPeriods = (template, availableSlots) => {
+      // 扁平化所有时间段并添加类型字段
+      const flatPeriods = Object.entries(template.periods).flatMap(
+        ([type, slots]) =>
+          slots.map((slot) => ({
+            id: slot._id.toString(),
+            name: slot.name,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            creditHours: slot.creditHours,
+            linkedSlots: slot.linkedSlots,
+            type, // 添加类型字段
+          }))
+      );
+
+      // 根据availableSlots进行过滤
+      return flatPeriods.filter((slot) => availableSlots.includes(slot.id));
+    };
+    this.timeSlots = flattenAndFilterPeriods(
+      this.template,
+      this.availableSlots
+    );
 
     // 按照上课周次长度和周学时数排序课程
     this.courses.sort((a, b) => {
@@ -69,9 +91,10 @@ class SchedulingAlgorithm {
   // 获取适合的时间段
   findSuitableTimeSlots(duration) {
     // 根据课程时长找到合适的时间段组合
-    return this.timeSlots.filter(
-      (slot) => Math.abs(slot.duration - duration) <= 10 // 允许10分钟的误差
-    );
+    // return this.timeSlots.filter(
+    //   (slot) => Math.abs(slot.creditHours - duration) <= 0.2 // 允许12分钟的误差
+    // );
+    return this.timeSlots;
   }
 
   // 评分函数：评估时间段的适合程度
@@ -148,8 +171,8 @@ class SchedulingAlgorithm {
     let bestScore = -1;
 
     // 获取适合的时间段
-    const suitableTimeSlots = this.findSuitableTimeSlots(course.duration || 90); // 默认90分钟
-
+    const suitableTimeSlots = this.findSuitableTimeSlots(course.hours || 1); // 默认1小时
+    debugger;
     // 优先尝试固定时间段
     for (const slot of existingSlots) {
       const timeSlot = this.timeSlots.find((t) => t.id === slot.timeSlotId);
@@ -268,8 +291,9 @@ class SchedulingAlgorithm {
             if (!fixedSlots) {
               // 如果没有固定时间段，寻找新的可用时间段
               fixedSlots = [];
-              for (let i = 0; i < weeklyHours; i += 2) {
+              for (let i = 0; i < weeklyHours; i += 1) {
                 // 每次增加2，因为是连续的两节课
+                debugger;
                 const slot = await this.findBestTimeSlot(
                   course,
                   week,

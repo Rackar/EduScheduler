@@ -45,9 +45,9 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const start = Date.now();
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  // console.log("Request Body:", req.body);
+  console.log("Request Body:", req.body);
   console.log("Request Query:", req.query);
-  console.log("Request Headers:", req.headers);
+  // console.log("Request Headers:", req.headers);
 
   // 监听响应完成事件
   res.on("finish", () => {

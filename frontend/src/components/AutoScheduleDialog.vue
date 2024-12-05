@@ -8,11 +8,6 @@
             <span>基本设置</span>
           </div>
         </template>
-        <el-form-item label="作息时间" prop="templateId">
-          <el-select v-model="form.templateId" class="w-full" placeholder="请选择作息时间模板">
-            <el-option v-for="template in templates" :key="template.id" :label="template.name" :value="template.id" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="起始周" prop="startWeek">
           <el-input-number v-model="form.startWeek" :min="1" :max="20" class="w-32" />
         </el-form-item>
@@ -52,21 +47,30 @@
             <span>时段设置</span>
           </div>
         </template>
-        <el-form-item label="上午课程">
+        <!-- 上午时段 -->
+        <el-form-item label="上午课程" v-if="currentTemplate?.periods?.morning?.length">
           <el-checkbox-group v-model="form.morningSlots">
-            <el-checkbox label="1-2">第1-2节</el-checkbox>
-            <el-checkbox label="3-4">第3-4节</el-checkbox>
+            <el-checkbox v-for="slot in currentTemplate.periods.morning" :key="slot.id" :label="slot.id">
+              {{ slot.name }} ({{ slot.startTime }}-{{ slot.endTime }})
+            </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-        <el-form-item label="下午课程">
+
+        <!-- 下午时段 -->
+        <el-form-item label="下午课程" v-if="currentTemplate?.periods?.afternoon?.length">
           <el-checkbox-group v-model="form.afternoonSlots">
-            <el-checkbox label="5-6">第5-6节</el-checkbox>
-            <el-checkbox label="7-8">第7-8节</el-checkbox>
+            <el-checkbox v-for="slot in currentTemplate.periods.afternoon" :key="slot.id" :label="slot.id">
+              {{ slot.name }} ({{ slot.startTime }}-{{ slot.endTime }})
+            </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-        <el-form-item label="晚上课程">
+
+        <!-- 晚上时段 -->
+        <el-form-item label="晚上课程" v-if="currentTemplate?.periods?.evening?.length">
           <el-checkbox-group v-model="form.eveningSlots">
-            <el-checkbox label="9-10">第9-10节</el-checkbox>
+            <el-checkbox v-for="slot in currentTemplate.periods.evening" :key="slot.id" :label="slot.id">
+              {{ slot.name }} ({{ slot.startTime }}-{{ slot.endTime }})
+            </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
       </el-card>
@@ -91,7 +95,18 @@
           </el-form-item>
           <el-form-item label="避免时段">
             <el-select v-model="form.avoidTimeSlots" multiple collapse-tags class="w-full" placeholder="选择需要避免的时间段">
-              <el-option v-for="slot in timeSlots" :key="slot.value" :label="slot.label" :value="slot.value" />
+              <el-option-group label="上午">
+                <el-option v-for="slot in currentTemplate?.periods?.morning" :key="slot.id"
+                  :label="`${slot.name} (${slot.startTime}-${slot.endTime})`" :value="slot.id" />
+              </el-option-group>
+              <el-option-group label="下午">
+                <el-option v-for="slot in currentTemplate?.periods?.afternoon" :key="slot.id"
+                  :label="`${slot.name} (${slot.startTime}-${slot.endTime})`" :value="slot.id" />
+              </el-option-group>
+              <el-option-group label="晚上">
+                <el-option v-for="slot in currentTemplate?.periods?.evening" :key="slot.id"
+                  :label="`${slot.name} (${slot.startTime}-${slot.endTime})`" :value="slot.id" />
+              </el-option-group>
             </el-select>
           </el-form-item>
         </template>
@@ -112,7 +127,7 @@
 <script setup>
 import { ref, watch } from "vue"
 import { ElMessage } from "element-plus"
-import { getScheduleTemplates, generateSchedule } from "@/api/schedule"
+import { getScheduleTemplates, generateSchedule, getCurrentTemplate } from "@/api/schedule"
 
 const props = defineProps({
   modelValue: Boolean,
@@ -125,6 +140,9 @@ const dialogVisible = ref(false)
 const loading = ref(false)
 const showAdvanced = ref(false)
 
+// 当前模板
+const currentTemplate = ref(null)
+
 // 表单数据
 const formRef = ref(null)
 const form = ref({
@@ -135,8 +153,8 @@ const form = ref({
   maxDailyLessons: 3,
   distribution: "balanced",
   allowAlternateWeeks: true,
-  morningSlots: ["1-2", "3-4"],
-  afternoonSlots: ["5-6", "7-8"],
+  morningSlots: [],
+  afternoonSlots: [],
   eveningSlots: [],
   priority: "teacher",
   considerClassroom: false,
@@ -150,26 +168,23 @@ const rules = {
   endWeek: [{ required: true, message: "请输入结束周", trigger: "blur" }],
 }
 
-// 作息时间模板列表
-const templates = ref([])
-const loadTemplates = async () => {
+
+// 获取当前模板
+const fetchCurrentTemplate = async () => {
   try {
-    const { data } = await getScheduleTemplates()
-    templates.value = data
+    const { data } = await getCurrentTemplate()
+    currentTemplate.value = data
+    // 预选当前模板的所有时间段
+    if (data?.periods) {
+      form.value.morningSlots = data.periods.morning?.map(slot => slot.id) || []
+      form.value.afternoonSlots = data.periods.afternoon?.map(slot => slot.id) || []
+      form.value.eveningSlots = data.periods.evening?.map(slot => slot.id) || []
+    }
   } catch (error) {
-    console.error("获取作息时间模板失败:", error)
-    ElMessage.error("获取作息时间模板失败")
+    console.error("获取当前模板失败:", error)
+    ElMessage.error("获取当前模板失败")
   }
 }
-
-// 时间段选项
-const timeSlots = [
-  { label: "第1-2节", value: "1-2" },
-  { label: "第3-4节", value: "3-4" },
-  { label: "第5-6节", value: "5-6" },
-  { label: "第7-8节", value: "7-8" },
-  { label: "第9-10节", value: "9-10" },
-]
 
 // 监听对话框显示状态
 watch(
@@ -177,7 +192,7 @@ watch(
   (val) => {
     dialogVisible.value = val
     if (val) {
-      loadTemplates()
+      fetchCurrentTemplate()
     }
   }
 )
@@ -207,6 +222,7 @@ const handleSubmit = async () => {
     const data = {
       ...form.value,
       availableSlots,
+      templateId: currentTemplate.value.id,
     }
 
     const result = await generateSchedule(data)

@@ -103,7 +103,19 @@ exports.getSchedule = async (req, res) => {
 // 生成课表
 exports.generateSchedule = async (req, res) => {
   try {
-    const { startWeek = 1, endWeek = 20 } = req.body;
+    const {
+      startWeek = 1,
+      endWeek = 20,
+      minDailyLessons = 2,
+      maxDailyLessons = 3,
+      distribution = "balanced",
+      allowAlternateWeeks = true,
+      priority = "teacher",
+      considerClassroom = false,
+      avoidTimeSlots = [],
+      availableSlots = [],
+      templateId = "",
+    } = req.body;
 
     console.log("开始查询课程数据");
     console.log("租户ID:", req.user.tenant);
@@ -136,10 +148,28 @@ exports.generateSchedule = async (req, res) => {
       });
     }
 
+    let template;
+    if (!templateId) {
+      return res.status(400).json({
+        message: "作息时间模板是必需的",
+      });
+    } else {
+      template = await ScheduleTemplate.findById(templateId);
+    }
+
     // 初始化排课算法
     const algorithm = new SchedulingAlgorithm(courses, {
       startWeek,
       endWeek,
+      minDailyLessons,
+      maxDailyLessons,
+      distribution,
+      allowAlternateWeeks,
+      priority,
+      considerClassroom,
+      avoidTimeSlots,
+      availableSlots,
+      template,
     });
 
     // 生成课表
