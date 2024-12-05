@@ -41,5 +41,17 @@ export const batchImportCourses = (data) => {
     url: "/api/courses/batch-import",
     method: "post",
     data,
+    transformResponse: [
+      (data) => {
+        try {
+          const parsedData = JSON.parse(data);
+          // 直接返回后端的原始响应格式
+          return parsedData;
+        } catch (error) {
+          console.error("解析响应数据失败:", error);
+          return data;
+        }
+      },
+    ],
   });
 };
