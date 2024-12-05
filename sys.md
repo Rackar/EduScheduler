@@ -29,113 +29,269 @@
 
 ## 当前任务
 
-自动化排课算法优化：
+重新构建一个独立的自动化排课算法：
 
-1.当前的数据已录入。 2.排课逻辑：首先上课周次较长的大课（如 2-19 周）。找到大课和对应的班级，对大课和班级进行排课，然后才考虑周次较小的。3.排课时要考虑班级和考试课表的一致性，同一门课尽量安排在每周的固定时段。4.同一老师的时间需要考虑错开。
+### 1.原始数据
 
-已发现 bug： 1.上次排课花费 153 秒，时间过长。同时大量 log 填充看不到有用信息，最后结果还报错。
+上课班级 学生人数 课程名称 学分 周学时 上课周次 任课教师 课程代码 课程类型 开课院系
+工程测量技术 23 级 1-3 班 142 测绘法规基础知识 1.5 2.0-0.0 02-16 张保民 1 必修 土木
+工程测量技术 23 级 1-3 班 142 BIM 技术应用基础 3 4.0-0.0 02-16 邓秋菊 2 必修 土木
+工程测量技术 23 级 1-3 班 142 土木工程监测测量 3 4.0-0.0 02-16 张保民 3 必修 土木
+工程测量技术 23 级 1-3 班 142 GIS 技术与应用 3 4.0-0.0 02-16 段秋亚 4 必修 土木
+工程测量技术 23 级 1 班 47 建筑节能技术 1.5 2.0-0.0 02-16 肖利才 5 必修 土木
+工程测量技术 23 级 2 班 47 建筑节能技术 1.5 2.0-0.0 02-16 肖利才 6 必修 土木
+工程测量技术 23 级 3 班 47 建筑节能技术 1.5 2.0-0.0 02-16 肖利才 7 必修 土木
+工程测量技术 23 级 1-3 班 142 工程项目招投标与合同管理 ★ 1.5 2.0-0.0 02-16 吴朋金 8 必修 土木
+工程测量技术 23 级 1-3 班 142 地图制图技术 ★ 1.5 2.0-0.0 02-16 邢磊 9 必修 土木
+工程测量技术 23 级 1-3 班 142 测绘仪器检测与维修 ★ 1.5 2.0-0.0 02-16 周广勇 10 必修 土木
+工程测量技术(学徒制)23 级 1 班 45 测绘法规基础知识 2 2.0-0.0 02-16 企业导师 1 11 必修 土木
+工程测量技术(学徒制)23 级 1 班 45 无人机测量技术实训 2 2 16-17 企业导师 2 12 必修 土木
+工程测量技术(学徒制)23 级 1 班 45 GIS 实训 2 2 18-19 企业导师 3 13 必修 土木
+工程测量技术(学徒制)23 级 1 班 45 地图制图技术 3 4.0-0.0 02-16 企业导师 4 14 必修 土木
+工程测量技术 24 级 1-3 班 128 无人机测量技术 1.5 2.0-0.0 02-16 邢磊 106 必修 土木
+工程测量技术 24 级 1-3 班 128 土木工程 CAD 1.5 2.0-0.0 02-16 林龙 107 必修 土木
+工程测量技术 24 级 1-3 班 128 控制测量技术 3 4.0-0.0 02-16 岳崇伦 108 必修 土木
+工程测量技术 24 级 1-3 班 128 GPS 定位技术 1.5 2.0-0.0 02-16 周广勇 109 必修 土木
+工程测量技术 24 级 1-3 班 128 工程经济 1.5 2.0-0.0 02-16 刘文新 110 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 无人机测量技术 2 2.0-0.0 02-16 邢磊 111 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 控制测量技术 3 4.0-0.0 02-16 陈伟标 112 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 GPS 定位技术 2 2.0-0.0 02-16 周广勇 113 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 GPS 定位技术实训 2 2 17-18 段秋亚 114 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 控制测量实训 1 1 19-19 王玉娥 115 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 GIS 技术与应用 3 4.0-0.0 02-16 段秋亚 116 必修 土木
+工程测量技术(学徒制)24 级 1 班 49 测绘仪器检测与维修 2 2.0-0.0 02-16 周广勇 117 必修 土木
 
-2.时段优先级参数请暂时忽略。
+### 2. 已入库表结构
 
-3.上次排课报错
+1. 教师
+   {
+   "\_id": {
+   "$oid": "6751d3fd9fc1cc6a9cc213fd"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+   },
+   "school": {
+   "$oid": "675061cc65838124b873d161"
+  },
+  "username": "企业导师31733415933297",
+  "password": "$2a$10$ABF0o9SAfNaaRFl38ePUY.qJxLgwRLrhykrk4Zi.rXNrZq9VxTM2u",
+   "name": "企业导师 3",
+   "email": "企业导师31733415933297@example.com",
+   "status": "active",
+   "roles": [
+   "teacher"
+   ],
+   "profile": {
+   "teachingHours": {
+   "current": 0,
+   "min": 14,
+   "max": 16
+   },
+   "courses": [
+   {
+   "$oid": "6751d3fd9fc1cc6a9cc21400"
+   }
+   ]
+   },
+   "preferences": {
+   "notifications": {
+   "email": true,
+   "web": true
+   },
+   "theme": "light"
+   },
+   "createdAt": {
+   "$date": "2024-12-05T16:25:33.298Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.367Z"
+   },
+   "\_\_v": 1
+   }
+2. 班级
+   {
+   "\_id": {
+   "$oid": "6751d3fc9fc1cc6a9cc21384"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+   },
+   "school": {
+   "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术23级1班",
+  "department": "工程测量技术",
+  "grade": 2023,
+  "classNumber": 1,
+  "studentCount": 47,
+  "courses": [
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc2138c"
+   },
+   {
+   "$oid": "6751d3fc9fc1cc6a9cc21397"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213a0"
+   },
+   {
+   "$oid": "6751d3fc9fc1cc6a9cc213ab"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213b4"
+   },
+   {
+   "$oid": "6751d3fc9fc1cc6a9cc213cd"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213d8"
+   },
+   {
+   "$oid": "6751d3fd9fc1cc6a9cc213e3"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:32.633Z"
+   },
+   "updatedAt": {
+   "$date": "2024-12-05T16:25:33.145Z"
+   },
+   "\_\_v": 0
+   }
+3. 课程
+   {
+   "\_id": {
+   "$oid": "6751d3fc9fc1cc6a9cc21397"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+   },
+   "school": {
+   "$oid": "675061cc65838124b873d161"
+  },
+  "name": "BIM技术应用基础",
+  "code": "2",
+  "credit": 3,
+  "hours": 4,
+  "type": "必修",
+  "department": "土木",
+  "description": "",
+  "teacher": {
+    "$oid": "6751d3fc9fc1cc6a9cc21392"
+   },
+   "classes": [
+   {
+   "$oid": "6751d3fc9fc1cc6a9cc21384"
+   },
+   {
+   "$oid": "6751d3fc9fc1cc6a9cc21387"
+   },
+   {
+   "$oid": "6751d3fc9fc1cc6a9cc2138a"
+   }
+   ],
+   "status": "active",
+   "studentCount": 0,
+   "weeks": {
+   "start": 2,
+   "end": 16
+   },
+   "version": 1,
+   "deletedAt": null,
+   "semester": "2024 秋季",
+   "createdAt": {
+   "$date": "2024-12-05T16:25:32.726Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:32.726Z"
+   },
+   "\_\_v": 0
+   }
+4. 学时模板
+   {
+   "\_id": {
+   "$oid": "67507518d225410871ba37f6"
+  },
+  "name": "职高模板",
+  "description": "都是两节的大课",
+  "periods": {
+    "morning": [
+      {
+        "name": "第一节大课",
+        "startTime": "08:00",
+        "endTime": "09:50",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627eb"
+   }
+   },
+   {
+   "name": "第二节大课",
+   "startTime": "10:00",
+   "endTime": "11:50",
+   "creditHours": 2,
+   "\_id": {
+   "$oid": "6751a5e2b2ceafff0f6627ec"
+        }
+      }
+    ],
+    "afternoon": [
+      {
+        "name": "第三节大课",
+        "startTime": "14:30",
+        "endTime": "16:00",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627e9"
+   }
+   },
+   {
+   "name": "第四节大课",
+   "startTime": "16:10",
+   "endTime": "18:00",
+   "creditHours": 2,
+   "\_id": {
+   "$oid": "6751a5e2b2ceafff0f6627ea"
+        }
+      }
+    ],
+    "evening": [
+      {
+        "name": "第五节大课",
+        "startTime": "18:30",
+        "endTime": "20:00",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627e8"
+   }
+   }
+   ]
+   },
+   "isDefault": false,
+   "createdBy": {
+   "$oid": "675061cc65838124b873d165"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+   },
+   "createdAt": {
+   "$date": "2024-12-04T15:28:24.406Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T13:08:50.111Z"
+   },
+   "\_\_v": 0,
+   "isActive": true
+   }
 
-处理课程: 专业基础知识及能力考核, 周学时: 1, 周次: 19-19
-为课程 专业基础知识及能力考核 设置了固定时间段: [ { dayOfWeek: 3, timeSlot: 1 } ]
-成功安排课程 专业基础知识及能力考核 在第 19 周星期 3 第 1 节
-处理课程: 控制测量实训, 周学时: 1, 周次: 19-19
-为课程 控制测量实训 设置了固定时间段: [ { dayOfWeek: 2, timeSlot: 3 } ]
-成功安排课程 控制测量实训 在第 19 周星期 2 第 3 节
-处理课程: 专业基础知识及能力考核, 周学时: 1, 周次: 19-19
-为课程 专业基础知识及能力考核 设置了固定时间段: [ { dayOfWeek: 5, timeSlot: 4 } ]
-成功安排课程 专业基础知识及能力考核 在第 19 周星期 5 第 4 节
-开始处理第 20 周的课程安排
-第 20 周需要排课的课程数量: 0
-课表生成完成，总计生成 8230 条排课记录
-生成了 8230 条排课记录
-生成课表失败: Error: Schedule validation failed: classId: Path `classId` is required., teacherId: Path `teacherId` is required., courseId: Path `courseId` is required., day: Path `day` is required., timeSlot: `1` is not a valid enum value for path `timeSlot`., templateId: Path `templateId` is required.
-at ValidationError.inspect (E:\2024\paike\server\node_modules\mongoose\lib\error\validation.js:52:26)  
- at formatValue (node:internal/util/inspect:806:19)  
- at inspect (node:internal/util/inspect:365:10)  
- at formatWithOptionsInternal (node:internal/util/inspect:2273:40)
-at formatWithOptions (node:internal/util/inspect:2135:10)
-at console.value (node:internal/console/constructor:349:14)
-at console.warn (node:internal/console/constructor:382:61)
-at exports.generateSchedule (E:\2024\paike\server\controllers\scheduleController.js:173:13)
-at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
-errors: {
-classId: ValidatorError: Path `classId` is required.
-at validate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1385:13)
-at SchemaType.doValidate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1369:7)
-at E:\2024\paike\server\node_modules\mongoose\lib\document.js:3071:18
-at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
-properties: [Object],
-kind: 'required',
-path: 'classId',
-value: undefined,
-reason: undefined,
-[Symbol(mongoose#validatorError)]: true
-},
-teacherId: ValidatorError: Path `teacherId` is required.
-at validate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1385:13)
-at SchemaType.doValidate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1369:7)
-at E:\2024\paike\server\node_modules\mongoose\lib\document.js:3071:18
-at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
-properties: [Object],
-kind: 'required',
-path: 'teacherId',
-value: undefined,
-reason: undefined,
-[Symbol(mongoose#validatorError)]: true
-},
-courseId: ValidatorError: Path `courseId` is required.
-at validate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1385:13)
-at SchemaType.doValidate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1369:7)
-at E:\2024\paike\server\node_modules\mongoose\lib\document.js:3071:18
-at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
-properties: [Object],
-kind: 'required',
-path: 'courseId',
-value: undefined,
-reason: undefined,
-[Symbol(mongoose#validatorError)]: true
-},
-day: ValidatorError: Path `day` is required.  
- at validate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1385:13)
-at SchemaType.doValidate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1369:7)
-at E:\2024\paike\server\node_modules\mongoose\lib\document.js:3071:18
-at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
-properties: [Object],
-kind: 'required',
-path: 'day',
-value: undefined,
-reason: undefined,
-[Symbol(mongoose#validatorError)]: true
-},
-timeSlot: ValidatorError: `1` is not a valid enum value for path `timeSlot`.
-at validate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1385:13)
-at SchemaType.doValidate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1369:7)
-at E:\2024\paike\server\node_modules\mongoose\lib\document.js:3071:18
-at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
-properties: [Object],
-kind: 'enum',
-path: 'timeSlot',
-value: '1',
-reason: undefined,
-[Symbol(mongoose#validatorError)]: true
-},
-templateId: ValidatorError: Path `templateId` is required.
-at validate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1385:13)
-at SchemaType.doValidate (E:\2024\paike\server\node_modules\mongoose\lib\schemaType.js:1369:7)
-at E:\2024\paike\server\node_modules\mongoose\lib\document.js:3071:18
-at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
-properties: [Object],
-kind: 'required',
-path: 'templateId',
-value: undefined,
-reason: undefined,
-[Symbol(mongoose#validatorError)]: true
-}
-},
-\_message: 'Schedule validation failed'
-}
-[2024-12-05T09:26:08.564Z] POST /generate 500 - 153177ms
+### 3.排课需求
+
+1.首先分好每个班每门课的上课周次。2-16 代表第 2 周一直学到第 16 周。这种课只需要排一次，每周按同样的时间段上课。 2.其次每门课在本周安排的数量。2.0-0.0 代表每周 1 节大课，两个学时，这部分已处理好，为课程数据表中的 hours 字段。 在学时模版中，每个时间段也有 creditHours 字段与之对应。此模板为大课模板，所以每个时间段都为 2 个学时对应一节大课。 3.一个班的同一门课，在一周内最好不要连续上，如需要上 6 课时三节大课，最好安排在一、三、五。 4.排课要检查老师可用的情况，不能重叠。
+
+### 当前问题
+
+按这个需求，帮我分析最适用的排课算法。先不需要写打码，仅仅说一下思路。(已完成)
+
+分析的不错。我将上面提到的数据放到了 server/mock 目录下。我希望你再新建一个 js 文件用来实现算法。全部使用这些 mock 数据作为初始输入值。按照需求分析的结果实现。

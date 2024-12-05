@@ -1,0 +1,358 @@
+[{
+  "_id": {
+    "$oid": "6751d3fc9fc1cc6a9cc21384"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术23级1班",
+  "department": "工程测量技术",
+  "grade": 2023,
+  "classNumber": 1,
+  "studentCount": 47,
+  "courses": [
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc2138c"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc21397"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213a0"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213ab"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213b4"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213cd"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213d8"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213e3"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:32.633Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.145Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fc9fc1cc6a9cc21387"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术23级2班",
+  "department": "工程测量技术",
+  "grade": 2023,
+  "classNumber": 2,
+  "studentCount": 47,
+  "courses": [
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc2138c"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc21397"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213a0"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213ab"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213bb"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213cd"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213d8"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213e3"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:32.636Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.145Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fc9fc1cc6a9cc2138a"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术23级3班",
+  "department": "工程测量技术",
+  "grade": 2023,
+  "classNumber": 3,
+  "studentCount": 47,
+  "courses": [
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc2138c"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc21397"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213a0"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213ab"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213c2"
+    },
+    {
+      "$oid": "6751d3fc9fc1cc6a9cc213cd"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213d8"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213e3"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:32.638Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.145Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fd9fc1cc6a9cc213ec"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术(学徒制)23级1班",
+  "department": "工程测量技术(学徒制)",
+  "grade": 2023,
+  "classNumber": 1,
+  "studentCount": 45,
+  "courses": [
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213ee"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc213f7"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21400"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21409"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:33.217Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.441Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fd9fc1cc6a9cc21410"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术24级1班",
+  "department": "工程测量技术",
+  "grade": 2024,
+  "classNumber": 1,
+  "studentCount": 42,
+  "courses": [
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21418"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21423"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc2142e"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21437"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21442"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:33.447Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.699Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fd9fc1cc6a9cc21413"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术24级2班",
+  "department": "工程测量技术",
+  "grade": 2024,
+  "classNumber": 2,
+  "studentCount": 42,
+  "courses": [
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21418"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21423"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc2142e"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21437"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21442"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:33.449Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.699Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fd9fc1cc6a9cc21416"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术24级3班",
+  "department": "工程测量技术",
+  "grade": 2024,
+  "classNumber": 3,
+  "studentCount": 42,
+  "courses": [
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21418"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21423"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc2142e"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21437"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21442"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:33.450Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.699Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6751d3fd9fc1cc6a9cc21449"
+  },
+  "tenant": {
+    "$oid": "675061cc65838124b873d15f"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "name": "工程测量技术(学徒制)24级1班",
+  "department": "工程测量技术(学徒制)",
+  "grade": 2024,
+  "classNumber": 1,
+  "studentCount": 49,
+  "courses": [
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc2144b"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21454"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc2145b"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21462"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc2146b"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21472"
+    },
+    {
+      "$oid": "6751d3fd9fc1cc6a9cc21479"
+    }
+  ],
+  "status": "active",
+  "createdAt": {
+    "$date": "2024-12-05T16:25:33.703Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T16:25:33.884Z"
+  },
+  "__v": 0
+}]

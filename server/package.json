@@ -10,7 +10,8 @@
     "clean": "node scripts/cleanData.js",
     "cc": "node scripts/clearDatabase.js",
     "cs": "node scripts/clearSchedule.js",
-    "fix:emails": "node scripts/fixTeacherEmails.js"
+    "fix:emails": "node scripts/fixTeacherEmails.js",
+    "mock": "node mock/run.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
