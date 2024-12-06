@@ -369,6 +369,8 @@ class SchedulingAlgorithm {
             classId: classId.toString(),
             teacherId: course.teacher._id.toString(),
             timeSlot: slot,
+            timeSlotId: slot.id,
+            dayOfWeek: slot.day,
             courseName: course.name,
             weeks: this.getCourseWeeks(course, 0), // 单周
           });
@@ -381,6 +383,8 @@ class SchedulingAlgorithm {
             classId: classId.toString(),
             teacherId: course.teacher._id.toString(),
             timeSlot: slot,
+            timeSlotId: slot.id,
+            dayOfWeek: slot.day,
             courseName: course.name,
             weeks: this.getCourseWeeks(course, 1), // 双周
           });
@@ -400,6 +404,8 @@ class SchedulingAlgorithm {
             classId: classId.toString(),
             teacherId: course.teacher._id.toString(),
             timeSlot: slot,
+            timeSlotId: slot.id,
+            dayOfWeek: slot.day,
             courseName: course.name,
             weeks: this.getCourseWeeks(course), // 所有周次
           });
@@ -427,6 +433,8 @@ class SchedulingAlgorithm {
         classId: classId.toString(),
         teacherId: course.teacher._id.toString(),
         timeSlot: slot,
+        timeSlotId: slot.id,
+        dayOfWeek: slot.day,
         weeks,
       };
 
