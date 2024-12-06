@@ -316,4 +316,61 @@ weeks: [ 19 ]
 
 看起来很不错。现在还需要新建一个 scheduleRoute2.js，把接口暴露出去供前端使用。(已完成)
 
-scheduleRoute2 调用 generate 时，没有按照 Algorithm2 的传参模式，导致排课失败。需要先从数据中查询出 4 个参数，再调用 generate。（未完成，暂时搁置等待后续修改命令）
+我需要进一步优化排课算法 Algorithm2 的代码。首先就是构造函数其他参数不变，添加一个额外可选参数对象 options，用来接收一些额外的配置。比如说第一项是否允许单双周 allowAlternateWeeks, 例如一门课的周课时为 3，学时模版为 2 学时大课，那么一周需要上 1.5 节课，如果设置 allowAlternateWeeks 为 true，那么一周可以上 2 节，下周上 1 节。如果为 false，那么 1.5 视作 2 节，按照 2 节要求排课。第二项参数 allowConsecutivePeriods: 是否允许连续上课，默认为 false，也就是同一课程在同一班级至少隔一天再上，除非周课次数超出每周 3 次的不能拆到 3 天以下。第三项 maxCoursesPerDay: 每天最大课程数，默认不超过 4 个。注意： 你上次帮我写的方式不对，原构造函数有 mockClasses, mockCourses, mockUsers, mockScheduleTemplates 4 个参数，一个都不能丢。 (已完成)
+
+单双周的识别已经没问题了，但是排课结果并没有按单双周处理。
+输出的日志：
+课程 测绘仪器检测与维修 处理结果: {
+original: 3,
+processed: { evenWeek: 1, oddWeek: 2, isAlternate: true }
+}
+初始化排课算法: {
+coursesCount: 26,
+timeSlotsCount: 25,
+options: {
+allowAlternateWeeks: true,
+allowConsecutivePeriods: false,
+maxCoursesPerDay: 4
+}
+}
+[
+{
+courseId: '6751d3fd9fc1cc6a9cc21479',
+classId: '6751d3fd9fc1cc6a9cc21449',
+teacherId: '6751d3fd9fc1cc6a9cc213de',
+timeSlot: {
+day: '1',
+period: '第三节大课',
+startTime: '14:30',
+endTime: '16:00',
+creditHours: 2,
+id: '6751a5e2b2ceafff0f6627e9'
+},
+tearcherName: undefined,
+weeks: [
+2, 3, 4, 5, 6, 7,
+8, 9, 10, 11, 12, 13,
+14, 15, 16
+]
+},
+{
+courseId: '6751d3fd9fc1cc6a9cc21479',
+classId: '6751d3fd9fc1cc6a9cc21449',
+teacherId: '6751d3fd9fc1cc6a9cc213de',
+timeSlot: {
+day: '3',
+period: '第三节大课',
+startTime: '14:30',
+endTime: '16:00',
+creditHours: 2,
+id: '6751a5e2b2ceafff0f6627e9'
+},
+tearcherName: undefined,
+weeks: [
+2, 3, 4, 5, 6, 7,
+8, 9, 10, 11, 12, 13,
+14, 15, 16
+]
+}
+]
+可以看到 weeks 数组中，并没有形成单双周的区分。

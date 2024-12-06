@@ -19,18 +19,147 @@
  */
 
 class SchedulingAlgorithm {
-  constructor(mockClasses, mockCourses, mockUsers, mockScheduleTemplates) {
+  constructor(
+    mockClasses,
+    mockCourses,
+    mockUsers,
+    mockScheduleTemplates,
+    options = {}
+  ) {
     // 初始化数据
     this.classes = mockClasses;
     this.courses = mockCourses;
     this.teachers = mockUsers.filter((user) => user.roles.includes("teacher"));
     this.scheduleTemplate = mockScheduleTemplates[0];
 
+    // 配置选项,设置默认值
+    this.options = {
+      // 是否允许单双周排课(处理1.5节这种情况)
+      allowAlternateWeeks: options.allowAlternateWeeks || false,
+
+      // 是否允许连续上课(默认同一课程至少隔一天)
+      allowConsecutivePeriods: options.allowConsecutivePeriods || false,
+
+      // 每天最大课程数
+      maxCoursesPerDay: options.maxCoursesPerDay || 4,
+    };
+
     // 初始化时间槽
     this.timeSlots = this.initializeTimeSlots();
 
     // 初始化结果数组
     this.scheduleResults = [];
+
+    // 初始化课程周次分配
+    this.courseWeeklySlots = new Map(); // 记录每门课每周的时间段分配
+
+    // 验证和处理课时
+    this.validateAndProcessHours();
+
+    console.log("初始化排课算法:", {
+      coursesCount: this.courses.length,
+      timeSlotsCount: this.timeSlots.length,
+      options: this.options,
+    });
+  }
+
+  /**
+   * 验证和处理课时分配
+   * 处理1.5节课这种特殊情况
+   */
+  validateAndProcessHours() {
+    this.courses.forEach((course) => {
+      const weeklyHours = course.hours;
+      const processedHours = this.processWeeklyHours(weeklyHours);
+
+      // 存储处理后的每周课时数
+      course.processedHours = processedHours;
+
+      console.log(`课程 ${course.name} 处理结果:`, {
+        original: weeklyHours,
+        processed: processedHours,
+      });
+    });
+  }
+
+  /**
+   * 处理周课时数
+   * @param {number} hours - 原始周课时数
+   * @returns {Object} 处理后的课时安排
+   */
+  processWeeklyHours(hours) {
+    // 如果不允许单双周,向上取整
+    if (!this.options.allowAlternateWeeks) {
+      return {
+        periodsPerWeek: Math.ceil(hours / 2), // 每周课时数(向上取整)
+        isAlternate: false,
+      };
+    }
+
+    // 允许单双周且是1.5的倍数
+    if (hours % 3 === 0) {
+      return {
+        evenWeek: Math.floor(hours / 2), // 双周课时
+        oddWeek: Math.ceil(hours / 2), // 单周课时
+        isAlternate: true,
+      };
+    }
+
+    // 其他情况仍然向上取整
+    return {
+      periodsPerWeek: Math.ceil(hours / 2),
+      isAlternate: false,
+    };
+  }
+
+  /**
+   * 检查是否可以在指定日期安排课程
+   * @param {Object} course - 课程信息
+   * @param {number} day - 星期几
+   * @returns {boolean}
+   */
+  canScheduleOnDay(course, day) {
+    // 获取该天已安排的课程数
+    const coursesOnDay = this.scheduleResults.filter(
+      (schedule) => schedule.timeSlot.day === day
+    ).length;
+
+    // 检查是否超过每天最大课程数
+    if (coursesOnDay >= this.options.maxCoursesPerDay) {
+      return false;
+    }
+
+    // 如果不允许连续上课,检查前后天是否有同一门课
+    if (!this.options.allowConsecutivePeriods) {
+      const hasAdjacentDay = this.scheduleResults.some(
+        (schedule) =>
+          schedule.courseId === course._id.$oid &&
+          Math.abs(Number(schedule.timeSlot.day) - Number(day)) <= 1
+      );
+
+      if (hasAdjacentDay) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 获取课程在指定周的课时数
+   * @param {Object} course - 课程信息
+   * @param {number} week - 周次
+   * @returns {number} 课时数
+   */
+  getPeriodsForWeek(course, week) {
+    if (!course.processedHours.isAlternate) {
+      return course.processedHours.periodsPerWeek;
+    }
+
+    // 单双周区分处理
+    return week % 2 === 0
+      ? course.processedHours.evenWeek
+      : course.processedHours.oddWeek;
   }
 
   /**
@@ -51,6 +180,7 @@ class SchedulingAlgorithm {
           startTime: period.startTime,
           endTime: period.endTime,
           creditHours: period.creditHours,
+          id: period._id.$oid,
         });
       });
 
@@ -62,6 +192,7 @@ class SchedulingAlgorithm {
           startTime: period.startTime,
           endTime: period.endTime,
           creditHours: period.creditHours,
+          id: period._id.$oid,
         });
       });
 
@@ -73,6 +204,7 @@ class SchedulingAlgorithm {
           startTime: period.startTime,
           endTime: period.endTime,
           creditHours: period.creditHours,
+          id: period._id.$oid,
         });
       });
     });
@@ -198,6 +330,9 @@ class SchedulingAlgorithm {
             classId: classId.$oid,
             teacherId: course.teacher.$oid,
             timeSlot: availableSlots[i],
+            courseName: course.name,
+            // className: classId.name,
+            // tearcherName: course.teacher.name,
             weeks,
           });
         }

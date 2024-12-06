@@ -9,8 +9,14 @@ const scheduler = new SchedulingAlgorithm(
   mockClasses,
   mockCourses,
   mockUsers,
-  mockScheduleTemplates
+  mockScheduleTemplates,
+  { allowAlternateWeeks: true }
 );
 const results = scheduler.schedule();
 
-console.log(results);
+// console.log(results);
+
+let testCourses = results.filter(
+  (item) => item.courseId === "6751d3fd9fc1cc6a9cc21479"
+);
+console.log(testCourses);
