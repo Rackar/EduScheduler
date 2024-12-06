@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const errorHandler = require("./middleware/errorHandler");
 
 // 加载环境变量
 dotenv.config();
@@ -71,18 +72,12 @@ app.use("/api/classrooms", require("./routes/classroomRoutes"));
 app.use("/api/exchanges", require("./routes/exchangeRoutes"));
 app.use("/api/classes", require("./routes/classRoutes"));
 app.use("/api/timeslots", require("./routes/timeSlotRoutes"));
-app.use("/api/schedules", require("./routes/scheduleRoutes"));
+const scheduleRoutes2 = require("./routes/scheduleRoutes2");
+app.use("/api/schedules", scheduleRoutes2);
 app.use("/api/schedule-templates", require("./routes/scheduleTemplateRoutes"));
 app.use("/api/seed", require("./routes/seedRoutes"));
 
-// 错误处理中间件
-app.use((err, req, res, next) => {
-  console.error("Error:", err);
-  console.error("Stack:", err.stack);
-  res.status(500).json({
-    status: "error",
-    message: err.message || "服务器错误！",
-  });
-});
+// 注册错误处理中间件（确保在所有路由之后注册）
+app.use(errorHandler);
 
 module.exports = app;

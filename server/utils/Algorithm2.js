@@ -1,9 +1,3 @@
-// 导入mock数据
-const mockClasses = require("./class.json");
-const mockCourses = require("./course.json");
-const mockUsers = require("./users.json");
-const mockScheduleTemplates = require("./scheduletemplates.json");
-
 /**
  * 课程时间槽类型定义
  * @typedef {Object} TimeSlot
@@ -25,7 +19,7 @@ const mockScheduleTemplates = require("./scheduletemplates.json");
  */
 
 class SchedulingAlgorithm {
-  constructor() {
+  constructor(mockClasses, mockCourses, mockUsers, mockScheduleTemplates) {
     // 初始化数据
     this.classes = mockClasses;
     this.courses = mockCourses;

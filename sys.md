@@ -311,3 +311,9 @@ creditHours: 2
 weeks: [ 19 ]
 }
 这样的结构，可以稍作调整。timeSlot 可以改成 timeSlotId，因为都是从学时模板中来的。然后这样的 Schema 放到数据库中，我已经新建一个 Schedule2.js 用来存储 mongoose 模型。(已完成)
+
+好的。根据 Schema，我们可以再新建一个 ScheduleController2 来处理排课的逻辑。接口尽量类似之前的 ScheduleController。 只是排课算法使用换过位置的 Algorithm2，里面的传参模式我也做了修改。ScheduleController2 中我们就不适用 mock 数据了，直接查询数据库。（已完成）
+
+看起来很不错。现在还需要新建一个 scheduleRoute2.js，把接口暴露出去供前端使用。(已完成)
+
+scheduleRoute2 调用 generate 时，没有按照 Algorithm2 的传参模式，导致排课失败。需要先从数据中查询出 4 个参数，再调用 generate。（未完成，暂时搁置等待后续修改命令）
