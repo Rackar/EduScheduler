@@ -18,7 +18,18 @@
  * @property {number[]} weeks - 周次数组
  */
 
+/**
+ * 排课算法类
+ */
 class SchedulingAlgorithm {
+  /**
+   * 构造函数
+   * @param {Object[]} mockClasses - 班级数据
+   * @param {Object[]} mockCourses - 课程数据
+   * @param {Object[]} mockUsers - 用户数据
+   * @param {Object} mockScheduleTemplates - 排课模板数据
+   * @param {Object} options - 配置选项
+   */
   constructor(
     mockClasses,
     mockCourses,
@@ -30,7 +41,7 @@ class SchedulingAlgorithm {
     this.classes = mockClasses;
     this.courses = mockCourses;
     this.teachers = mockUsers.filter((user) => user.roles.includes("teacher"));
-    this.scheduleTemplate = mockScheduleTemplates[0];
+    this.scheduleTemplate = mockScheduleTemplates;
 
     // 配置选项,设置默认值
     this.options = {
@@ -173,7 +184,7 @@ class SchedulingAlgorithm {
     // 遍历每一天
     days.forEach((day) => {
       // 上午时间段
-      this.scheduleTemplate.periods.morning.forEach((period) => {
+      this.scheduleTemplate.periods.morning?.forEach((period) => {
         slots.push({
           day,
           period: period.name,
@@ -185,7 +196,7 @@ class SchedulingAlgorithm {
       });
 
       // 下午时间段
-      this.scheduleTemplate.periods.afternoon.forEach((period) => {
+      this.scheduleTemplate.periods.afternoon?.forEach((period) => {
         slots.push({
           day,
           period: period.name,
@@ -197,7 +208,7 @@ class SchedulingAlgorithm {
       });
 
       // 晚上时间段
-      this.scheduleTemplate.periods.evening.forEach((period) => {
+      this.scheduleTemplate.periods.evening?.forEach((period) => {
         slots.push({
           day,
           period: period.name,

@@ -4,6 +4,7 @@ const Class = require("../models/Class");
 const ScheduleTemplate = require("../models/ScheduleTemplate");
 const Algorithm2 = require("../utils/Algorithm2");
 const { catchAsync } = require("../utils/errors");
+const User = require("../models/User");
 
 class ScheduleController2 {
   /**
@@ -11,19 +12,22 @@ class ScheduleController2 {
    */
   generateSchedule = catchAsync(async (req, res) => {
     const {
-      templateId, // 学时模板ID
-      semester, // 学期
-      startWeek = 1, // 开始周次
-      endWeek = 20, // 结束周次
-      availableSlots = [], // 可用时间段ID数组
+      templateId,
+      startWeek = 1,
+      endWeek = 20,
+      minDailyLessons = 2,
+      maxDailyLessons = 3,
+      allowAlternateWeeks = true,
+      considerClassroom = false,
+      avoidTimeSlots = [],
+      availableSlots = [],
+      semester = "2024春季",
     } = req.body;
 
     const { school, tenant } = req.user;
 
     // 1. 获取学时模板
-    const template = await ScheduleTemplate.findById(templateId).populate(
-      "timeSlots"
-    ); //这行估计有问题
+    const template = await ScheduleTemplate.findById(templateId).lean();
     if (!template) {
       return res.status(404).json({
         status: "error",
@@ -31,60 +35,67 @@ class ScheduleController2 {
       });
     }
 
-    // 2. 获取需要排课的课程
+    // 2. 获取所有班级
+    const classes = await Class.find({
+      school,
+      status: "active",
+    }).lean();
+
+    // 3. 获取所有课程和教师信息
     const courses = await Course.find({
       school,
       semester,
       status: "active",
-    }).populate([
-      {
-        path: "teacher",
-        select: "name availableTime", // 确保获取教师可用时间
-      },
-      {
-        path: "classes",
-        select: "name grade availableTime", // 确保获取班级可用时间
-      },
-    ]);
+    })
+      .populate("teacher")
+      .lean();
 
-    if (!courses.length) {
-      return res.status(404).json({
-        status: "error",
-        message: "未找到需要排课的课程",
-      });
-    }
+    // 4. 获取所有教师
+    const teachers = await User.find({
+      school,
+      roles: "teacher",
+      status: "active",
+    }).lean();
 
-    // 3. 准备算法所需的四个关键参数
-    const algorithmParams = {
-      courses, // 课程信息（包含教师和班级信息）
-      timeSlots: template.timeSlots, // 时间槽信息
-      constraints: {
-        // 约束条件
-        startWeek,
-        endWeek,
-        availableSlots,
-        template,
-      },
-      preferences: {
-        // 偏好设置（可以根据实际需求扩展）
-        teacherAvailability: courses.map((course) => ({
-          teacherId: course.teacher._id,
-          availableTime: course.teacher.availableTime || [],
-        })),
-        classAvailability: courses.flatMap((course) =>
-          course.classes.map((cls) => ({
-            classId: cls._id,
-            availableTime: cls.availableTime || [],
-          }))
-        ),
-      },
+    // 5. 过滤出可用的时间槽
+    const filteredPeriods = {
+      morning:
+        template.periods.morning?.filter(
+          (slot) =>
+            availableSlots.includes(slot._id.toString()) &&
+            !avoidTimeSlots.includes(slot._id.toString())
+        ) || [],
+      afternoon:
+        template.periods.afternoon?.filter(
+          (slot) =>
+            availableSlots.includes(slot._id.toString()) &&
+            !avoidTimeSlots.includes(slot._id.toString())
+        ) || [],
+      evening:
+        template.periods.evening?.filter(
+          (slot) =>
+            availableSlots.includes(slot._id.toString()) &&
+            !avoidTimeSlots.includes(slot._id.toString())
+        ) || [],
     };
 
-    // 4. 初始化排课算法并生成课表
-    const algorithm = new Algorithm2(algorithmParams);
-    const schedules = await algorithm.generate();
+    // 6. 初始化排课算法
+    const algorithm = new Algorithm2(
+      classes,
+      courses,
+      teachers,
+      { ...template, periods: filteredPeriods },
+      {
+        allowAlternateWeeks,
+        allowConsecutivePeriods: false,
+        maxCoursesPerDay: maxDailyLessons,
+      }
+    );
 
-    // 5. 保存到数据库
+    // 7. 生成课表
+    const schedules = await algorithm.schedule();
+
+    // 8. 保存到数据库
     const savedSchedules = await Schedule2.insertMany(
       schedules.map((schedule) => ({
         ...schedule,

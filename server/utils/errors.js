@@ -11,6 +11,7 @@ const catchAsync = (fn) => {
         next(err);
         return;
       }
+      console.log(err);
 
       // 否则直接返回错误响应
       res.status(err.statusCode || 500).json({

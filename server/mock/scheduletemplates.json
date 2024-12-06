@@ -1,77 +1,75 @@
-[
-  {
-    "_id": {
-      "$oid": "67507518d225410871ba37f6"
-    },
-    "name": "职高模板",
-    "description": "都是两节的大课",
-    "periods": {
-      "morning": [
-        {
-          "name": "第一节大课",
-          "startTime": "08:00",
-          "endTime": "09:50",
-          "creditHours": 2,
-          "_id": {
-            "$oid": "6751a5e2b2ceafff0f6627eb"
-          }
-        },
-        {
-          "name": "第二节大课",
-          "startTime": "10:00",
-          "endTime": "11:50",
-          "creditHours": 2,
-          "_id": {
-            "$oid": "6751a5e2b2ceafff0f6627ec"
-          }
+{
+  "_id": {
+    "$oid": "67507518d225410871ba37f6"
+  },
+  "name": "职高模板",
+  "description": "都是两节的大课",
+  "periods": {
+    "morning": [
+      {
+        "name": "第一节大课",
+        "startTime": "08:00",
+        "endTime": "09:50",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627eb"
         }
-      ],
-      "afternoon": [
-        {
-          "name": "第三节大课",
-          "startTime": "14:30",
-          "endTime": "16:00",
-          "creditHours": 2,
-          "_id": {
-            "$oid": "6751a5e2b2ceafff0f6627e9"
-          }
-        },
-        {
-          "name": "第四节大课",
-          "startTime": "16:10",
-          "endTime": "18:00",
-          "creditHours": 2,
-          "_id": {
-            "$oid": "6751a5e2b2ceafff0f6627ea"
-          }
+      },
+      {
+        "name": "第二节大课",
+        "startTime": "10:00",
+        "endTime": "11:50",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627ec"
         }
-      ],
-      "evening": [
-        {
-          "name": "第五节大课",
-          "startTime": "18:30",
-          "endTime": "20:00",
-          "creditHours": 2,
-          "_id": {
-            "$oid": "6751a5e2b2ceafff0f6627e8"
-          }
+      }
+    ],
+    "afternoon": [
+      {
+        "name": "第三节大课",
+        "startTime": "14:30",
+        "endTime": "16:00",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627e9"
         }
-      ]
-    },
-    "isDefault": false,
-    "createdBy": {
-      "$oid": "675061cc65838124b873d165"
-    },
-    "school": {
-      "$oid": "675061cc65838124b873d161"
-    },
-    "createdAt": {
-      "$date": "2024-12-04T15:28:24.406Z"
-    },
-    "updatedAt": {
-      "$date": "2024-12-05T13:08:50.111Z"
-    },
-    "__v": 0,
-    "isActive": true
-  }
-]
+      },
+      {
+        "name": "第四节大课",
+        "startTime": "16:10",
+        "endTime": "18:00",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627ea"
+        }
+      }
+    ],
+    "evening": [
+      {
+        "name": "第五节大课",
+        "startTime": "18:30",
+        "endTime": "20:00",
+        "creditHours": 2,
+        "_id": {
+          "$oid": "6751a5e2b2ceafff0f6627e8"
+        }
+      }
+    ]
+  },
+  "isDefault": false,
+  "createdBy": {
+    "$oid": "675061cc65838124b873d165"
+  },
+  "school": {
+    "$oid": "675061cc65838124b873d161"
+  },
+  "createdAt": {
+    "$date": "2024-12-04T15:28:24.406Z"
+  },
+  "updatedAt": {
+    "$date": "2024-12-05T13:08:50.111Z"
+  },
+  "__v": 0,
+  "isActive": true
+}

@@ -373,4 +373,28 @@ weeks: [
 ]
 }
 ]
-可以看到 weeks 数组中，并没有形成单双周的区分。
+可以看到 weeks 数组中，并没有形成单双周的区分。 （已完成）
+
+排课算法已经能用了。现在需要修改 scheduleController2.js 的 generateSchedule 方法。根据前端传入的参数：
+
+```
+{
+  templateId: "67507518d225410871ba37f6",
+  startWeek: 1,
+  endWeek: 20,
+  minDailyLessons: 2,
+  maxDailyLessons: 3,
+  allowAlternateWeeks: true,
+  considerClassroom: false,
+  avoidTimeSlots: [],
+  availableSlots: [
+    "6751a5e2b2ceafff0f6627eb",
+    "6751a5e2b2ceafff0f6627ec",
+    "6751a5e2b2ceafff0f6627e9",
+    "6751a5e2b2ceafff0f6627ea",
+    "6751a5e2b2ceafff0f6627e8",
+  ],
+}
+```
+
+根据 templateId 查询学时模板，根据 availableSlots 查询具体学时对应的时段，查询当前租户学校下所有班级，查询当前学期所有课程和教师，然后进行传参进行排课。 仅仅帮我改造入参，不要修改其他部分。
