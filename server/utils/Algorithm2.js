@@ -252,13 +252,39 @@ class SchedulingAlgorithm {
   /**
    * 获取课程的周次数组
    * @param {Object} course
+   * @param {number} slotIndex - 第几个时间槽(0开始)
    * @returns {number[]}
    */
-  getCourseWeeks(course) {
+  getCourseWeeks(course, slotIndex = 0) {
     const weeks = [];
-    for (let i = course.weeks.start; i <= course.weeks.end; i++) {
-      weeks.push(i);
+    const { start, end } = course.weeks;
+
+    // 如果不是单双周课程,返回所有周次
+    if (!course.processedHours?.isAlternate) {
+      for (let i = start; i <= end; i++) {
+        weeks.push(i);
+      }
+      return weeks;
     }
+
+    // 单双周处理
+    for (let i = start; i <= end; i++) {
+      // 第一个时间槽在单周上课(多课时)
+      if (slotIndex === 0) {
+        if (i % 2 === 1) {
+          // 单周
+          weeks.push(i);
+        }
+      }
+      // 第二个时间槽在双周上课(少课时)
+      else if (slotIndex === 1) {
+        if (i % 2 === 0) {
+          // 双周
+          weeks.push(i);
+        }
+      }
+    }
+
     return weeks;
   }
 
@@ -304,38 +330,69 @@ class SchedulingAlgorithm {
    * @param {Object} course
    */
   scheduleCourse(course) {
-    // 获取课程周次
-    const weeks = this.getCourseWeeks(course);
-
     // 获取每周所需课时数
     const weeklyHours = course.hours;
 
-    // 计算需要安排的课程数量
-    const lessonsPerWeek = weeklyHours / 2; // 因为每个时间槽是2学时
-
     // 为每个班级安排课程
     course.classes.forEach((classId) => {
-      // 获取可用的时间槽
-      const availableSlots = this.getAvailableSlots(
-        course,
-        classId,
-        lessonsPerWeek
-      );
+      if (course.processedHours?.isAlternate) {
+        // 单双周排课
+        // 1. 单周课时(多)
+        const oddWeekSlots = this.getAvailableSlots(
+          course,
+          classId,
+          course.processedHours.oddWeek
+        );
 
-      // 安排课程
-      for (let i = 0; i < lessonsPerWeek; i++) {
-        if (availableSlots[i]) {
+        // 2. 双周课时(少)
+        const evenWeekSlots = this.getAvailableSlots(
+          course,
+          classId,
+          course.processedHours.evenWeek
+        );
+
+        // 安排单周课程
+        oddWeekSlots.forEach((slot, index) => {
           this.scheduleResults.push({
             courseId: course._id.$oid,
             classId: classId.$oid,
             teacherId: course.teacher.$oid,
-            timeSlot: availableSlots[i],
+            timeSlot: slot,
             courseName: course.name,
-            // className: classId.name,
-            // tearcherName: course.teacher.name,
-            weeks,
+            weeks: this.getCourseWeeks(course, 0), // 单周
           });
-        }
+        });
+
+        // 安排双周课程
+        evenWeekSlots.forEach((slot, index) => {
+          this.scheduleResults.push({
+            courseId: course._id.$oid,
+            classId: classId.$oid,
+            teacherId: course.teacher.$oid,
+            timeSlot: slot,
+            courseName: course.name,
+            weeks: this.getCourseWeeks(course, 1), // 双周
+          });
+        });
+      } else {
+        // 常规排课(每周相同)
+        const lessonsPerWeek = weeklyHours / 2;
+        const availableSlots = this.getAvailableSlots(
+          course,
+          classId,
+          lessonsPerWeek
+        );
+
+        availableSlots.forEach((slot) => {
+          this.scheduleResults.push({
+            courseId: course._id.$oid,
+            classId: classId.$oid,
+            teacherId: course.teacher.$oid,
+            timeSlot: slot,
+            courseName: course.name,
+            weeks: this.getCourseWeeks(course), // 所有周次
+          });
+        });
       }
     });
   }
