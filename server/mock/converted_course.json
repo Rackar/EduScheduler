@@ -1,0 +1,754 @@
+[
+  {
+    "_id": "6751d3fc9fc1cc6a9cc2138c",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "测绘法规基础知识",
+    "code": "1",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc21381",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.641Z",
+    "updatedAt": "2024-12-05T16:25:32.641Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc21397",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "BIM技术应用基础",
+    "code": "2",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc21392",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.726Z",
+    "updatedAt": "2024-12-05T16:25:32.726Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213a0",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "土木工程监测测量",
+    "code": "3",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc21381",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.741Z",
+    "updatedAt": "2024-12-05T16:25:32.741Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213ab",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "GIS技术与应用",
+    "code": "4",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213a6",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.820Z",
+    "updatedAt": "2024-12-05T16:25:32.820Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213b4",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "建筑节能技术",
+    "code": "5",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213b1",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.895Z",
+    "updatedAt": "2024-12-05T16:25:32.895Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213bb",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "建筑节能技术",
+    "code": "6",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213b1",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21387"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.905Z",
+    "updatedAt": "2024-12-05T16:25:32.905Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213c2",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "建筑节能技术",
+    "code": "7",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213b1",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.914Z",
+    "updatedAt": "2024-12-05T16:25:32.914Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213cd",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "工程项目招投标与合同管理★",
+    "code": "8",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213c8",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:32.990Z",
+    "updatedAt": "2024-12-05T16:25:32.990Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213d8",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "地图制图技术★",
+    "code": "9",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213d3",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.067Z",
+    "updatedAt": "2024-12-05T16:25:33.067Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213e3",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "测绘仪器检测与维修★",
+    "code": "10",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213de",
+    "classes": [
+      "6751d3fc9fc1cc6a9cc21384",
+      "6751d3fc9fc1cc6a9cc21387",
+      "6751d3fc9fc1cc6a9cc2138a"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.143Z",
+    "updatedAt": "2024-12-05T16:25:33.143Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213ee",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "测绘法规基础知识",
+    "code": "11",
+    "credit": 2,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213e9",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc213ec"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.219Z",
+    "updatedAt": "2024-12-05T16:25:33.219Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213f7",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "无人机测量技术实训",
+    "code": "12",
+    "credit": 2,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213f4",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc213ec"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 16,
+      "end": 17
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.292Z",
+    "updatedAt": "2024-12-05T16:25:33.292Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21400",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "GIS实训",
+    "code": "13",
+    "credit": 2,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213fd",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc213ec"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 18,
+      "end": 19
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.365Z",
+    "updatedAt": "2024-12-05T16:25:33.365Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21409",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "地图制图技术",
+    "code": "14",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc21406",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc213ec"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.439Z",
+    "updatedAt": "2024-12-05T16:25:33.439Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21418",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "无人机测量技术",
+    "code": "106",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213d3",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21410",
+      "6751d3fd9fc1cc6a9cc21413",
+      "6751d3fd9fc1cc6a9cc21416"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.452Z",
+    "updatedAt": "2024-12-05T16:25:33.452Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21423",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "土木工程CAD",
+    "code": "107",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc2141e",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21410",
+      "6751d3fd9fc1cc6a9cc21413",
+      "6751d3fd9fc1cc6a9cc21416"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.529Z",
+    "updatedAt": "2024-12-05T16:25:33.529Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc2142e",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "控制测量技术",
+    "code": "108",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc21429",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21410",
+      "6751d3fd9fc1cc6a9cc21413",
+      "6751d3fd9fc1cc6a9cc21416"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.610Z",
+    "updatedAt": "2024-12-05T16:25:33.610Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21437",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "GPS定位技术",
+    "code": "109",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213de",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21410",
+      "6751d3fd9fc1cc6a9cc21413",
+      "6751d3fd9fc1cc6a9cc21416"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.621Z",
+    "updatedAt": "2024-12-05T16:25:33.621Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21442",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "工程经济",
+    "code": "110",
+    "credit": 1.5,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc2143d",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21410",
+      "6751d3fd9fc1cc6a9cc21413",
+      "6751d3fd9fc1cc6a9cc21416"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.697Z",
+    "updatedAt": "2024-12-05T16:25:33.697Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc2144b",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "无人机测量技术",
+    "code": "111",
+    "credit": 2,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213d3",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.705Z",
+    "updatedAt": "2024-12-05T16:25:33.705Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21454",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "控制测量技术",
+    "code": "112",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc21451",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.779Z",
+    "updatedAt": "2024-12-05T16:25:33.779Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc2145b",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "GPS定位技术",
+    "code": "113",
+    "credit": 2,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213de",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.786Z",
+    "updatedAt": "2024-12-05T16:25:33.786Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21462",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "GPS定位技术实训",
+    "code": "114",
+    "credit": 2,
+    "hours": 2,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213a6",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 17,
+      "end": 18
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.793Z",
+    "updatedAt": "2024-12-05T16:25:33.793Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc2146b",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "控制测量实训",
+    "code": "115",
+    "credit": 1,
+    "hours": 1,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc21468",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 19,
+      "end": 19
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.867Z",
+    "updatedAt": "2024-12-05T16:25:33.867Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21472",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "GIS技术与应用",
+    "code": "116",
+    "credit": 3,
+    "hours": 4,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fc9fc1cc6a9cc213a6",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.874Z",
+    "updatedAt": "2024-12-05T16:25:33.874Z",
+    "__v": 0
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21479",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "name": "测绘仪器检测与维修",
+    "code": "117",
+    "credit": 2,
+    "hours": 3,
+    "type": "必修",
+    "department": "土木",
+    "description": "",
+    "teacher": "6751d3fd9fc1cc6a9cc213de",
+    "classes": [
+      "6751d3fd9fc1cc6a9cc21449"
+    ],
+    "status": "active",
+    "studentCount": 0,
+    "weeks": {
+      "start": 2,
+      "end": 16
+    },
+    "version": 1,
+    "deletedAt": null,
+    "semester": "2024秋季",
+    "createdAt": "2024-12-05T16:25:33.882Z",
+    "updatedAt": "2024-12-05T16:25:33.882Z",
+    "__v": 0
+  }
+]

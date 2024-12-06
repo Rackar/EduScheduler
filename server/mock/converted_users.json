@@ -1,0 +1,540 @@
+[
+  {
+    "_id": "6751d3fc9fc1cc6a9cc21381",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "张保民1733415932554",
+    "password": "$2a$10$EdCwHJVVEO/0/zcfh4il8OhT/z2Y1BIdb.QyYPibTnSs2uRNfWh4G",
+    "name": "张保民",
+    "email": "张保民1733415932554@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fc9fc1cc6a9cc2138c",
+        "6751d3fc9fc1cc6a9cc213a0"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:32.559Z",
+    "updatedAt": "2024-12-05T16:25:32.743Z",
+    "__v": 2
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc21392",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "邓秋菊1733415932652",
+    "password": "$2a$10$k55.5EKlUkSWFPwR7pbuyOSGvnBuHozbopJ31zsE0CrrFzj/dsz26",
+    "name": "邓秋菊",
+    "email": "邓秋菊1733415932652@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fc9fc1cc6a9cc21397"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:32.653Z",
+    "updatedAt": "2024-12-05T16:25:32.731Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213a6",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "段秋亚1733415932748",
+    "password": "$2a$10$oeSkKZVMmJ5rSP3IXKzh1O4G1vzA0gq9.JXjvBWIfXcR0IAOu6Ywe",
+    "name": "段秋亚",
+    "email": "段秋亚1733415932748@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fc9fc1cc6a9cc213ab",
+        "6751d3fd9fc1cc6a9cc21462",
+        "6751d3fd9fc1cc6a9cc21472"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:32.749Z",
+    "updatedAt": "2024-12-05T16:25:33.876Z",
+    "__v": 3
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213b1",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "肖利才1733415932825",
+    "password": "$2a$10$ekL2.JA6Xvzq1eCRAktgX.amU0Mkq2A/ZroVD3ly470Vd1ZR3PAZm",
+    "name": "肖利才",
+    "email": "肖利才1733415932825@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fc9fc1cc6a9cc213b4",
+        "6751d3fc9fc1cc6a9cc213bb",
+        "6751d3fc9fc1cc6a9cc213c2"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:32.826Z",
+    "updatedAt": "2024-12-05T16:25:32.916Z",
+    "__v": 3
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213c8",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "吴朋金1733415932919",
+    "password": "$2a$10$Mpp7Dw.Q2KQTjHTnHlM9h.9wst6SjOminjbZKzGSZra7Pge.McrJ.",
+    "name": "吴朋金",
+    "email": "吴朋金1733415932919@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fc9fc1cc6a9cc213cd"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:32.920Z",
+    "updatedAt": "2024-12-05T16:25:32.992Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fc9fc1cc6a9cc213d3",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "邢磊1733415932996",
+    "password": "$2a$10$U2QpiQd8uAdGM/lKFcBZiejRfoIgJ7e42bGoTd2zsmFWuAeWevm7a",
+    "name": "邢磊",
+    "email": "邢磊1733415932996@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc213d8",
+        "6751d3fd9fc1cc6a9cc21418",
+        "6751d3fd9fc1cc6a9cc2144b"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:32.996Z",
+    "updatedAt": "2024-12-05T16:25:33.706Z",
+    "__v": 3
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213de",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "周广勇1733415933071",
+    "password": "$2a$10$hAnE4/McdGkh9vhgf7oREuZLUC3UcqWH4dWiWSzKfXyXDapQGgXQ.",
+    "name": "周广勇",
+    "email": "周广勇1733415933071@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc213e3",
+        "6751d3fd9fc1cc6a9cc21437",
+        "6751d3fd9fc1cc6a9cc2145b",
+        "6751d3fd9fc1cc6a9cc21479"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.072Z",
+    "updatedAt": "2024-12-05T16:25:33.883Z",
+    "__v": 4
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213e9",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "企业导师11733415933148",
+    "password": "$2a$10$DOhEy9xkLxqyJUJh70cq8uYdFJ6DXewEEOE6dRWKUo3iQsSjpnbgK",
+    "name": "企业导师1",
+    "email": "企业导师11733415933148@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc213ee"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.148Z",
+    "updatedAt": "2024-12-05T16:25:33.220Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213f4",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "企业导师21733415933223",
+    "password": "$2a$10$GblHSPrIa5OzQ6TsuuuJO.WEg13tk63xP6n7hEYfb9NsCdrrUzVHC",
+    "name": "企业导师2",
+    "email": "企业导师21733415933223@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc213f7"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.224Z",
+    "updatedAt": "2024-12-05T16:25:33.294Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc213fd",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "企业导师31733415933297",
+    "password": "$2a$10$ABF0o9SAfNaaRFl38ePUY.qJxLgwRLrhykrk4Zi.rXNrZq9VxTM2u",
+    "name": "企业导师3",
+    "email": "企业导师31733415933297@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc21400"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.298Z",
+    "updatedAt": "2024-12-05T16:25:33.367Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21406",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "企业导师41733415933370",
+    "password": "$2a$10$bw4ikNuEowQDPvoSTFPgAOAG76YTTpkKu.TwGKfR9DpM7w4X88.9G",
+    "name": "企业导师4",
+    "email": "企业导师41733415933370@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc21409"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.371Z",
+    "updatedAt": "2024-12-05T16:25:33.440Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc2141e",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "林龙1733415933458",
+    "password": "$2a$10$k1.c8wA.8afvCJ4lV0131.CtIs/bm4FJFpmx5dt9EfGbCm3DQSgBK",
+    "name": "林龙",
+    "email": "林龙1733415933458@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc21423"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.458Z",
+    "updatedAt": "2024-12-05T16:25:33.531Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21429",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "岳崇伦1733415933534",
+    "password": "$2a$10$A2Uk6hv7T9E0gAQ9zRQCtOLOXo69nyl6Z1MNYpYFZcN47pwqDbPiO",
+    "name": "岳崇伦",
+    "email": "岳崇伦1733415933534@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc2142e"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.534Z",
+    "updatedAt": "2024-12-05T16:25:33.612Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc2143d",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "刘文新1733415933626",
+    "password": "$2a$10$oa2Oo.1oyyj.omF0M/KmROcswkp/Nd0YscqsDN6uentXOH1MusHDC",
+    "name": "刘文新",
+    "email": "刘文新1733415933626@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc21442"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.626Z",
+    "updatedAt": "2024-12-05T16:25:33.698Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21451",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "陈伟标1733415933710",
+    "password": "$2a$10$bOXm3aDPgWj7r23Tp4rAi.3pJj0HnBsTzMfLXHBUKiDeyNuqcSZD6",
+    "name": "陈伟标",
+    "email": "陈伟标1733415933710@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc21454"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.710Z",
+    "updatedAt": "2024-12-05T16:25:33.780Z",
+    "__v": 1
+  },
+  {
+    "_id": "6751d3fd9fc1cc6a9cc21468",
+    "tenant": "675061cc65838124b873d15f",
+    "school": "675061cc65838124b873d161",
+    "username": "王玉娥1733415933798",
+    "password": "$2a$10$Y/txpq/C8ihHVT.9y7hXUOcVf3ngnwMu/uaXllNQp7ytOam7.QAfG",
+    "name": "王玉娥",
+    "email": "王玉娥1733415933798@example.com",
+    "status": "active",
+    "roles": [
+      "teacher"
+    ],
+    "profile": {
+      "teachingHours": {
+        "current": 0,
+        "min": 14,
+        "max": 16
+      },
+      "courses": [
+        "6751d3fd9fc1cc6a9cc2146b"
+      ]
+    },
+    "preferences": {
+      "notifications": {
+        "email": true,
+        "web": true
+      },
+      "theme": "light"
+    },
+    "createdAt": "2024-12-05T16:25:33.799Z",
+    "updatedAt": "2024-12-05T16:25:33.868Z",
+    "__v": 1
+  }
+]

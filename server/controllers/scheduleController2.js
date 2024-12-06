@@ -21,7 +21,7 @@ class ScheduleController2 {
       considerClassroom = false,
       avoidTimeSlots = [],
       availableSlots = [],
-      semester = "2024春季",
+      semester = "2024秋季",
     } = req.body;
 
     const { school, tenant } = req.user;

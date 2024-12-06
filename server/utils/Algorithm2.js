@@ -144,7 +144,7 @@ class SchedulingAlgorithm {
     if (!this.options.allowConsecutivePeriods) {
       const hasAdjacentDay = this.scheduleResults.some(
         (schedule) =>
-          schedule.courseId === course._id.$oid &&
+          schedule.courseId === course._id.toString() &&
           Math.abs(Number(schedule.timeSlot.day) - Number(day)) <= 1
       );
 
@@ -191,7 +191,7 @@ class SchedulingAlgorithm {
           startTime: period.startTime,
           endTime: period.endTime,
           creditHours: period.creditHours,
-          id: period._id.$oid,
+          id: period._id.toString(),
         });
       });
 
@@ -203,7 +203,7 @@ class SchedulingAlgorithm {
           startTime: period.startTime,
           endTime: period.endTime,
           creditHours: period.creditHours,
-          id: period._id.$oid,
+          id: period._id.toString(),
         });
       });
 
@@ -215,7 +215,7 @@ class SchedulingAlgorithm {
           startTime: period.startTime,
           endTime: period.endTime,
           creditHours: period.creditHours,
-          id: period._id.$oid,
+          id: period._id.toString(),
         });
       });
     });
@@ -365,9 +365,9 @@ class SchedulingAlgorithm {
         // 安排单周课程
         oddWeekSlots.forEach((slot, index) => {
           this.scheduleResults.push({
-            courseId: course._id.$oid,
-            classId: classId.$oid,
-            teacherId: course.teacher.$oid,
+            courseId: course._id.toString(),
+            classId: classId.toString(),
+            teacherId: course.teacher._id.toString(),
             timeSlot: slot,
             courseName: course.name,
             weeks: this.getCourseWeeks(course, 0), // 单周
@@ -377,9 +377,9 @@ class SchedulingAlgorithm {
         // 安排双周课程
         evenWeekSlots.forEach((slot, index) => {
           this.scheduleResults.push({
-            courseId: course._id.$oid,
-            classId: classId.$oid,
-            teacherId: course.teacher.$oid,
+            courseId: course._id.toString(),
+            classId: classId.toString(),
+            teacherId: course.teacher._id.toString(),
             timeSlot: slot,
             courseName: course.name,
             weeks: this.getCourseWeeks(course, 1), // 双周
@@ -396,9 +396,9 @@ class SchedulingAlgorithm {
 
         availableSlots.forEach((slot) => {
           this.scheduleResults.push({
-            courseId: course._id.$oid,
-            classId: classId.$oid,
-            teacherId: course.teacher.$oid,
+            courseId: course._id.toString(),
+            classId: classId.toString(),
+            teacherId: course.teacher._id.toString(),
             timeSlot: slot,
             courseName: course.name,
             weeks: this.getCourseWeeks(course), // 所有周次
@@ -423,9 +423,9 @@ class SchedulingAlgorithm {
     for (const slot of this.timeSlots) {
       // 创建临时排课结果用于冲突检查
       const tempSchedule = {
-        courseId: course._id.$oid,
-        classId: classId.$oid,
-        teacherId: course.teacher.$oid,
+        courseId: course._id.toString(),
+        classId: classId.toString(),
+        teacherId: course.teacher._id.toString(),
         timeSlot: slot,
         weeks,
       };

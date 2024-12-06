@@ -398,3 +398,35 @@ weeks: [
 ```
 
 根据 templateId 查询学时模板，根据 availableSlots 查询具体学时对应的时段，查询当前租户学校下所有班级，查询当前学期所有课程和教师，然后进行传参进行排课。 仅仅帮我改造入参，不要修改其他部分。
+
+{
+courseId: "6751d3fc9fc1cc6a9cc21397",
+classId: "6751d3fc9fc1cc6a9cc21384",
+teacherId: "6751d3fc9fc1cc6a9cc21392",
+timeSlot: {
+day: "1",
+period: "第一节大课",
+startTime: "08:00",
+endTime: "09:50",
+creditHours: 2,
+id: "6751a5e2b2ceafff0f6627eb",
+},
+courseName: "BIM 技术应用基础",
+weeks: [
+2,
+3,
+4,
+5,
+6,
+7,
+8,
+9,
+10,
+11,
+12,
+13,
+14,
+15,
+16,
+],
+}
