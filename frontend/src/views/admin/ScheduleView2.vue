@@ -14,15 +14,14 @@
 
       <!-- 视图模式切换 -->
       <div class="mb-4">
-        <el-tabs v-model="currentViewMode">
-          <el-tab-pane label="逐周视图" name="weekly">
-            <WeeklyScheduleView v-if="currentViewMode === 'weekly'" :current-template="currentTemplate" />
+        <el-tabs v-model="currentViewMode"><el-tab-pane label="教师课程视图" name="teacher">
+            <TeacherScheduleView v-if="currentViewMode === 'teacher'" :current-template="currentTemplate" />
           </el-tab-pane>
           <el-tab-pane label="班级课程视图" name="class">
             <ClassScheduleView v-if="currentViewMode === 'class'" :current-template="currentTemplate" />
           </el-tab-pane>
-          <el-tab-pane label="教师课程视图" name="teacher">
-            <TeacherScheduleView v-if="currentViewMode === 'teacher'" :current-template="currentTemplate" />
+          <el-tab-pane label="逐周视图" name="weekly">
+            <WeeklyScheduleView v-if="currentViewMode === 'weekly'" :current-template="currentTemplate" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -67,7 +66,7 @@ const VIEW_MODES = {
 const router = useRouter()
 const loading = ref(false)
 const currentTemplate = ref(null)
-const currentViewMode = ref(VIEW_MODES.WEEKLY)
+const currentViewMode = ref(VIEW_MODES.TEACHER_FULL)
 
 // 获取当前模板
 const fetchCurrentTemplate = async () => {

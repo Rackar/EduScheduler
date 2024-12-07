@@ -5,8 +5,8 @@
       <el-select v-model="currentWeek" placeholder="选择周次">
         <el-option v-for="week in weekOptions" :key="week" :label="`第${week}周`" :value="week" />
       </el-select>
-      <el-select v-model="currentClass" placeholder="选择班级">
-        <el-option v-for="cls in classes" :key="cls._id" :label="cls.name" :value="cls._id" />
+      <el-select v-model="currentClass" placeholder="选择班级" @change="val => console.log('选中的班级:', val)">
+        <el-option v-for="cls in classes" :key="cls.id || cls._id" :label="cls.name" :value="cls.id || cls._id" />
       </el-select>
     </div>
 
@@ -59,9 +59,15 @@ const scheduleTableData = computed(() => {
 const fetchClasses = async () => {
   try {
     const { data } = await getClasses()
-    classes.value = data
-    if (data.length > 0) {
-      currentClass.value = data[0]._id
+    console.log("班级数据:", data)
+    // 过滤活跃状态的班级并确保 ID 字段一致性
+    classes.value = data.filter(cls => cls.status === "active").map(cls => ({
+      ...cls,
+      id: cls.id || cls._id // 确保有 id 字段
+    }))
+    if (classes.value.length > 0) {
+      console.log("第一个班级:", classes.value[0])
+      currentClass.value = classes.value[0].id || classes.value[0]._id
     }
   } catch (error) {
     console.error("获取班级列表失败:", error)
@@ -75,19 +81,23 @@ const fetchSchedules = async () => {
 
   try {
     loading.value = true
-    const { data } = await getClassSchedule({
+    const response = await getClassSchedule({
       classId: currentClass.value,
       week: currentWeek.value
     })
 
+    console.log("API返回的数据:", response)
+
     // 转换数据格式
-    scheduleData.value = data.map(schedule => ({
+    scheduleData.value = response.data.data.map(schedule => ({
       timeSlotId: schedule.timeSlotId,
       dayOfWeek: schedule.dayOfWeek,
       courseName: schedule.courseId?.name || "未知课程",
       teacherName: schedule.teacherId?.name || "未知教师",
       status: schedule.status || "draft"
     }))
+
+    console.log("转换后的数据:", scheduleData.value)
   } catch (error) {
     console.error("获取课表失败:", error)
     ElMessage.error("获取课表失败")

@@ -102,6 +102,11 @@ const fetchTeachers = async () => {
       ...teacher,
       id: teacher.id || teacher._id
     }))
+
+    if (teachers.value.length > 0) {
+      console.log("第一个教师:", teachers.value[0])
+      selectedTeachers.value = [teachers.value[0].id || teachers.value[0]._id]
+    }
   } catch (error) {
     console.error("获取教师列表失败:", error)
     ElMessage.error("获取教师列表失败")
