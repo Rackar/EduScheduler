@@ -46,6 +46,11 @@ const routes = [
         component: () => import("../views/admin/ScheduleManage.vue"),
       },
       {
+        path: "schedule-view",
+        name: "ScheduleView",
+        component: () => import("../views/admin/ScheduleView2.vue"),
+      },
+      {
         path: "schedule-templates",
         name: "ScheduleTemplates",
         component: () => import("../views/admin/schedule-templates/index.vue"),

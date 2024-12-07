@@ -324,7 +324,7 @@ class ScheduleController2 {
     if (!teacherId || !week) {
       return res.status(400).json({
         status: "error",
-        message: "请提供教师ID和周次",
+        message: "请提供教���ID和周次",
       });
     }
 
@@ -334,6 +334,84 @@ class ScheduleController2 {
       tenant,
       teacherId,
       weeks: { $in: [parseInt(week)] },
+      status: { $ne: "deleted" },
+    })
+      .populate([
+        {
+          path: "courseId",
+          select: "name color",
+        },
+        {
+          path: "classId",
+          select: "name grade", // 班级名称和年级
+        },
+      ])
+      .sort({ dayOfWeek: 1, timeSlotId: 1 });
+
+    res.status(200).json({
+      status: "success",
+      data: schedules,
+    });
+  });
+
+  /**
+   * 获取指定班级的全部课程安排
+   */
+  getClassScheduleFull = catchAsync(async (req, res) => {
+    const { classId } = req.query;
+    const { school, tenant } = req.user;
+
+    if (!classId) {
+      return res.status(400).json({
+        status: "error",
+        message: "请提供班级ID",
+      });
+    }
+
+    // 查询该班级的所有课程安排
+    const schedules = await Schedule2.find({
+      school,
+      tenant,
+      classId,
+      status: { $ne: "deleted" },
+    })
+      .populate([
+        {
+          path: "courseId",
+          select: "name color", // 课程名称和颜色
+        },
+        {
+          path: "teacherId",
+          select: "name", // 教师姓名
+        },
+      ])
+      .sort({ dayOfWeek: 1, timeSlotId: 1 });
+
+    res.status(200).json({
+      status: "success",
+      data: schedules,
+    });
+  });
+
+  /**
+   * 获取指定教师的全部课程安排
+   */
+  getTeacherScheduleFull = catchAsync(async (req, res) => {
+    const { teacherId } = req.query;
+    const { school, tenant } = req.user;
+
+    if (!teacherId) {
+      return res.status(400).json({
+        status: "error",
+        message: "请提供教师ID",
+      });
+    }
+
+    // 查询该教师的所有课程安排
+    const schedules = await Schedule2.find({
+      school,
+      tenant,
+      teacherId,
       status: { $ne: "deleted" },
     })
       .populate([

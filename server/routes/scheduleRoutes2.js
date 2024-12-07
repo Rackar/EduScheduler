@@ -9,36 +9,16 @@ router.use(protect);
 // 生成课表 - 仅管理员
 router.post("/generate", schoolAdmin, scheduleController.generateSchedule);
 
-// 获取课表列表
-router.get("/", scheduleController.getSchedules);
-
-// 获取周课表
-router.get("/week", scheduleController.getWeekSchedule);
-
-// 更新课表状态 - 仅管理员
-router.patch(
-  "/:id/status",
-  schoolAdmin,
-  scheduleController.updateScheduleStatus
-);
-
-// 批量更新状态 - 仅管理员
-router.patch(
-  "/batch/status",
-  schoolAdmin,
-  scheduleController.batchUpdateStatus
-);
-
-// 删除课表 - 仅管理员
-router.delete("/:id", schoolAdmin, scheduleController.deleteSchedule);
-
-// 批量删除 - 仅管理员
-router.delete("/batch", schoolAdmin, scheduleController.batchDelete);
-
 // 获取班级某周的排课结果
 router.get("/class", scheduleController.getScheduleByClassAndWeek);
 
 // 获取教师某周的排课结果
 router.get("/teacher", scheduleController.getScheduleByTeacherAndWeek);
+
+// 获取班级全部课程安排
+router.get("/class/full", scheduleController.getClassScheduleFull);
+
+// 获取教师全部课程安排
+router.get("/teacher/full", scheduleController.getTeacherScheduleFull);
 
 module.exports = router;

@@ -34,6 +34,12 @@
           </el-icon>
           <span>排课管理</span>
         </el-menu-item>
+        <el-menu-item index="/admin/schedule-view">
+          <el-icon>
+            <View />
+          </el-icon>
+          <span>课表查看</span>
+        </el-menu-item>
         <el-menu-item index="/admin/schedule-templates">
           <el-icon>
             <Timer />
@@ -85,6 +91,7 @@ import {
   Timer,
   Management,
   Collection,
+  View,
 } from "@element-plus/icons-vue"
 
 const route = useRoute()
@@ -105,6 +112,7 @@ const pageTitle = computed(() => {
     "/admin/courses": "课程管理",
     "/admin/classrooms": "教室管理",
     "/admin/schedule": "排课管理",
+    "/admin/schedule-view": "课表查看",
     "/admin/schedule-templates": "学时模板管理",
     "/admin/tenants": "租户管理",
   }
