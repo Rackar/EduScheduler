@@ -137,7 +137,9 @@ cd frontend
 npm run dev
 ```
 
-访问 http://localhost:3000 即可看到应用界面
+后端接口地址默认在 http://localhost:3000
+
+浏览器访问 http://localhost:5173 即可看到应用界面
 
 ## 部署
 

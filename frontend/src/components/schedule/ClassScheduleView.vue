@@ -12,11 +12,13 @@
       <el-table-column prop="time" label="时间" width="150" />
       <el-table-column v-for="day in ['周一', '周二', '周三', '周四', '周五']" :key="day" :label="day">
         <template #default="{ row }">
-          <div v-if="row[day]" class="p-2 rounded" :class="getCellClass(row[day])">
-            <p class="font-medium">{{ row[day].courseName }}</p>
-            <p class="text-sm">{{ row[day].teacherName }}</p>
-            <p class="text-xs text-gray-500">({{ formatWeeks(row[day].weeks) }})</p>
-          </div>
+          <template v-if="Array.isArray(row[day])">
+            <div v-for="schedule in row[day]" :key="schedule.id" class="p-2 rounded" :class="getCellClass(schedule)">
+              <p class="font-medium">{{ schedule.courseName }}</p>
+              <p class="text-sm">{{ schedule.teacherName }}</p>
+              <p class="text-xs text-gray-500">({{ formatWeeks(schedule.weeks) }})</p>
+            </div>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -80,26 +82,20 @@ const fetchSchedules = async () => {
       classId: currentClass.value
     })
 
-    console.log("API返回的数据:", response)
-
     // 转换数据格式
-    scheduleData.value = response.data.data.map(schedule => {
-      console.log("处理课程:", schedule)
-      return {
-        timeSlotId: schedule.timeSlotId,
-        dayOfWeek: schedule.dayOfWeek,
-        courseName: schedule.courseId?.name || "未知课程",
-        teacherName: schedule.teacherId?.name || "未知教师",
-        status: schedule.status || "draft",
-        weeks: schedule.weeks || []
-      }
-    })
-
-    console.log("转换后的数据:", scheduleData.value)
+    scheduleData.value = response.data.data.map(schedule => ({
+      id: schedule._id,
+      timeSlotId: schedule.timeSlotId,
+      dayOfWeek: schedule.dayOfWeek,
+      courseName: schedule.courseId?.name || "未知课程",
+      teacherName: schedule.teacherId?.name || "未知教师",
+      status: schedule.status || "draft",
+      weeks: schedule.weeks || []
+    }))
   } catch (error) {
     console.error("获取课表失败:", error)
     ElMessage.error("获取课表失败")
-    scheduleData.value = [] // 出错时设置为空数组
+    scheduleData.value = []
   } finally {
     loading.value = false
   }

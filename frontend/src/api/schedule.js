@@ -138,3 +138,21 @@ export function getClassrooms(params) {
     params,
   });
 }
+
+// 检查课程时间冲突
+export function checkScheduleConflicts(params) {
+  return request({
+    url: "/api/schedule2/check-conflicts",
+    method: "post",
+    data: params,
+  });
+}
+
+// 更新课程时间
+export function updateScheduleTime(data) {
+  return request({
+    url: "/api/schedule2/update-time",
+    method: "put",
+    data,
+  });
+}

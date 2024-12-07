@@ -60,11 +60,6 @@ export const getCellClass = (schedule) => {
 export const convertToTableData = (template, scheduleData = []) => {
   if (!template?.periods) return [];
 
-  console.log("转换前的数据:", {
-    template,
-    scheduleData,
-  });
-
   // 获取所有时间段
   const timeSlots = [
     ...(template.periods.morning || []),
@@ -72,13 +67,11 @@ export const convertToTableData = (template, scheduleData = []) => {
     ...(template.periods.evening || []),
   ].map((slot, index) => ({
     ...slot,
-    id: slot.id || slot._id || `time-${index + 1}`, // 确保每个时间槽都有 id
+    id: slot.id || slot._id || `time-${index + 1}`,
     startTime: slot.startTime || slot.time?.split("-")[0] || "",
     endTime: slot.endTime || slot.time?.split("-")[1]?.split("\\n")[0] || "",
     name: slot.name || slot.time?.split("\\n")[1] || `第${index + 1}节`,
   }));
-
-  console.log("处理后的时间槽:", timeSlots);
 
   const result = timeSlots.map((slot) => {
     const row = {
@@ -88,36 +81,30 @@ export const convertToTableData = (template, scheduleData = []) => {
 
     // 添加每天的课程
     ["周一", "周二", "周三", "周四", "周五"].forEach((day, index) => {
-      // 查找对应的课程安排
-      const schedule = scheduleData.find((s) => {
-        // 打印调试信息
-        console.log("比较:", {
-          slotId: slot.id,
-          scheduleSlotId: s.timeSlotId,
-          day: index + 1,
-          scheduleDayOfWeek: s.dayOfWeek,
-          match:
-            String(s.timeSlotId) === String(slot.id) &&
-            s.dayOfWeek === index + 1,
-        });
-
-        // 直接比较字符串形式的 ID
-        return (
+      const daySchedules = scheduleData.filter(
+        (s) =>
           String(s.timeSlotId) === String(slot.id) && s.dayOfWeek === index + 1
-        );
-      });
+      );
 
-      if (schedule) {
-        console.log(`找到课程 [${day}] ${schedule.courseName}`);
+      if (daySchedules.length > 0) {
+        // 如果有多个课程，创建一个数组
+        row[day] = daySchedules.map((schedule) => ({
+          id: schedule.id,
+          timeSlotId: schedule.timeSlotId,
+          dayOfWeek: schedule.dayOfWeek,
+          courseName: schedule.courseName,
+          teacherName: schedule.teacherName,
+          status: schedule.status,
+          weeks: schedule.weeks || [],
+        }));
+      } else {
+        row[day] = null;
       }
-
-      row[day] = schedule || null;
     });
 
     return row;
   });
 
-  console.log("转换后的数据:", result);
   return result;
 };
 
@@ -127,18 +114,13 @@ export const convertToTableData = (template, scheduleData = []) => {
  * @returns {Array} - 合并后的课程数组
  */
 export const mergeScheduleWeeks = (schedules) => {
-  console.log("合并前的课程:", schedules);
   const merged = {};
 
   schedules.forEach((schedule) => {
-    // 生成唯一键
+    // 生成唯一键 (包含课程名称和教师，以区分不同课程)
     const key = `${String(schedule.timeSlotId)}-${schedule.dayOfWeek}-${
       schedule.courseName
-    }`;
-    console.log("处理课程:", {
-      schedule,
-      key,
-    });
+    }-${schedule.teacherName}`;
 
     if (!merged[key]) {
       merged[key] = {
@@ -155,6 +137,5 @@ export const mergeScheduleWeeks = (schedules) => {
     weeks: [...new Set(schedule.weeks || [])].sort((a, b) => a - b),
   }));
 
-  console.log("合并后的课程:", result);
   return result;
 };

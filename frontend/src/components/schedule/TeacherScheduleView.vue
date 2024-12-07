@@ -86,7 +86,27 @@ const convertToTableDataMultiple = (template, scheduleData = []) => {
           s.dayOfWeek === index + 1
         )
 
-        row[day] = schedules.length ? schedules : null
+        // 按教师和课程分组，确保不同周次的课程不被合并
+        const groupedSchedules = schedules.reduce((groups, schedule) => {
+          const key = `${schedule.teacherName}-${schedule.courseName}-${schedule.className}`
+          if (!groups[key]) {
+            groups[key] = {
+              ...schedule,
+              weeks: [...(schedule.weeks || [])]
+            }
+          } else {
+            groups[key].weeks.push(...(schedule.weeks || []))
+          }
+          return groups
+        }, {})
+
+        // 转换分组后的课程为数组，并对周次进行排序和去重
+        const mergedSchedules = Object.values(groupedSchedules).map(schedule => ({
+          ...schedule,
+          weeks: [...new Set(schedule.weeks)].sort((a, b) => a - b)
+        }))
+
+        row[day] = mergedSchedules.length ? mergedSchedules : null
       })
 
     return row

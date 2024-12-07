@@ -21,4 +21,10 @@ router.get("/class/full", scheduleController.getClassScheduleFull);
 // 获取教师全部课程安排
 router.get("/teacher/full", scheduleController.getTeacherScheduleFull);
 
+// 检查课程时间冲突
+router.post("/check-conflicts", scheduleController.checkScheduleConflicts);
+
+// 更新课程时间
+router.put("/update-time", scheduleController.updateScheduleTime);
+
 module.exports = router;

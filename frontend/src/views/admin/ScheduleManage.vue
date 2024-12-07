@@ -21,7 +21,6 @@
       </div>
 
       <!-- 当前模板信息 -->
-
       <el-card class="mb-4">
         <template #header>
           <div class="flex justify-between items-center">
@@ -36,100 +35,28 @@
           <p class="font-medium">{{ currentTemplate.name }}
             <span class="text-gray-500 pl-4">({{ currentTemplate.description }})</span>
           </p>
-
         </div>
       </el-card>
 
-      <!-- 筛选条件 -->
-      <div class="mb-4 flex space-x-4">
-        <el-select v-model="currentWeek" placeholder="选择周次">
-          <el-option v-for="week in weekOptions" :key="week" :label="`第${week}周`" :value="week" />
-        </el-select>
-        <el-select v-model="currentClass" placeholder="选择班级">
-          <el-option v-for="cls in classes" :key="cls.id" :label="cls.name" :value="cls.id" />
-        </el-select>
-      </div>
-
-      <!-- 课表 -->
-      <el-table :data="scheduleTableData" border>
-        <el-table-column prop="time" label="时间" width="150" />
-        <el-table-column v-for="day in ['周一', '周二', '周三', '周四', '周五']" :key="day" :label="day">
-          <template #default="{ row }">
-            <div v-if="row[day]" class="p-2 rounded" :class="getCellClass(row[day])">
-              <p class="font-medium">{{ row[day].courseName }}</p>
-              <p class="text-sm">{{ row[day].teacherName }}</p>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- 课程调整视图 -->
+      <ScheduleAdjustView v-if="currentTemplate" :current-template="currentTemplate"
+        @view-conflict="handleViewConflict" />
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue"
+import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
 import AutoScheduleDialog from "@/components/AutoScheduleDialog.vue"
-import { getClasses } from "@/api/class"
-import { getClassSchedule } from "@/api/schedule"
+import ScheduleAdjustView from "@/components/schedule/ScheduleAdjustView.vue"
 import { getCurrentTemplate } from "@/api/schedule"
 
 const router = useRouter()
+const loading = ref(false)
 const currentTemplate = ref(null)
 const showAutoScheduleDialog = ref(false)
-const currentWeek = ref(1)
-const currentClass = ref("")
-const classes = ref([])
-const schedules = ref([])
-const loading = ref(false)
-
-// 周次选项
-const weekOptions = computed(() => {
-  return Array.from({ length: 20 }, (_, i) => i + 1)
-})
-
-// 基础数据初始化
-const scheduleData = ref([])
-
-// 转换课表数据为表格格式
-const scheduleTableData = computed(() => {
-  // 确保有模板和时间段数据
-  if (!currentTemplate.value?.periods) return []
-
-  // 获取所有时间段
-  const timeSlots = [
-    ...(currentTemplate.value.periods.morning || []),
-    ...(currentTemplate.value.periods.afternoon || []),
-    ...(currentTemplate.value.periods.evening || [])
-  ]
-
-  return timeSlots.map(slot => {
-    const row = {
-      time: `${slot.startTime}-${slot.endTime}\n${slot.name}`,
-    }
-
-      // 添加每天的课程
-      ;['周一', '周二', '周三', '周四', '周五'].forEach((day, index) => {
-        const schedule = scheduleData.value.find(s =>
-          s.timeSlotId === slot.id &&
-          s.day === index + 1
-        )
-
-        if (schedule) {
-          row[day] = {
-            courseName: schedule.courseName,
-            teacherName: schedule.teacherName,
-            status: schedule.status
-          }
-        } else {
-          row[day] = null // 确保每个单元格都有值，即使是空值
-        }
-      })
-
-    return row
-  })
-})
 
 // 获取当前模板
 const fetchCurrentTemplate = async () => {
@@ -145,69 +72,8 @@ const fetchCurrentTemplate = async () => {
   }
 }
 
-// 获取班级列表
-const fetchClasses = async () => {
-  try {
-    const { data } = await getClasses()
-    classes.value = data
-    if (data.length > 0) {
-      currentClass.value = data[0]._id
-    }
-  } catch (error) {
-    console.error("获取班级列表失败:", error)
-    ElMessage.error("获取班级列表失败")
-  }
-}
-
-// 获取课表数据
-const fetchSchedules = async () => {
-  if (!currentClass.value || !currentWeek.value) return
-
-  try {
-    loading.value = true
-    const { data } = await getClassSchedule({
-      classId: currentClass.value,
-      week: currentWeek.value
-    })
-
-    if (data.data)
-      // 转换数据格式
-      scheduleData.value = data.data.map(schedule => ({
-        timeSlotId: schedule.timeSlotId,
-        day: schedule.dayOfWeek,
-        courseName: schedule.courseId.name,
-        teacherName: schedule.teacherId.name,
-        status: schedule.status || "draft"
-      }))
-  } catch (error) {
-    console.error("获取课表失败:", error)
-    ElMessage.error("获取课表失败")
-    scheduleData.value = [] // 出错时设置为空数组
-  } finally {
-    loading.value = false
-  }
-}
-
-// 获取单元格样式
-const getCellClass = (cell) => {
-  if (!cell) return ""
-
-  const baseClass = "bg-opacity-20"
-  switch (cell.status) {
-    case "draft":
-      return `${baseClass} bg-blue-500`
-    case "confirmed":
-      return `${baseClass} bg-green-500`
-    case "conflict":
-      return `${baseClass} bg-red-500`
-    default:
-      return baseClass
-  }
-}
-
 // 自动排课成功回调
 const handleScheduleSuccess = () => {
-  fetchSchedules()
   showAutoScheduleDialog.value = false
   ElMessage.success("排课成功")
 }
@@ -218,20 +84,15 @@ const handleExport = () => {
   ElMessage.info("导出功能开发中")
 }
 
-// 监听数据变化
-watch(
-  [currentWeek, currentClass],
-  () => {
-    if (currentClass.value && currentWeek.value) {
-      fetchSchedules()
-    }
-  }
-)
+// 处理查看冲突课表
+const handleViewConflict = (conflict) => {
+  // TODO: 实现跳转到冲突课表
+  console.log('查看冲突:', conflict)
+}
 
 // 页面加载时初始化数据
 onMounted(() => {
   fetchCurrentTemplate()
-  fetchClasses()
 })
 </script>
 

@@ -324,7 +324,7 @@ class ScheduleController2 {
     if (!teacherId || !week) {
       return res.status(400).json({
         status: "error",
-        message: "请提供教���ID和周次",
+        message: "请提供教师ID和周次",
       });
     }
 
@@ -431,6 +431,198 @@ class ScheduleController2 {
       data: schedules,
     });
   });
+
+  /**
+   * 检查课程时间冲突
+   */
+  checkScheduleConflicts = async (req, res) => {
+    try {
+      const { scheduleId, targetTimeSlot, targetDay } = req.body;
+      const { school, tenant } = req.user;
+
+      // 获取源课程信息
+      const sourceSchedule = await Schedule2.findOne({
+        _id: scheduleId,
+        school,
+        tenant,
+        status: { $ne: "deleted" },
+      }).populate([
+        {
+          path: "teacherId",
+          select: "name",
+        },
+        {
+          path: "classId",
+          select: "name",
+        },
+        {
+          path: "courseId",
+          select: "name",
+        },
+      ]);
+
+      if (!sourceSchedule) {
+        return res.status(404).json({
+          status: "error",
+          message: "课程不存在",
+        });
+      }
+
+      const conflicts = [];
+
+      // 1. 检查教师时间冲突
+      const teacherConflicts = await Schedule2.find({
+        school,
+        tenant,
+        teacherId: sourceSchedule.teacherId,
+        timeSlotId: targetTimeSlot,
+        dayOfWeek: targetDay,
+        weeks: { $in: sourceSchedule.weeks }, // 检查周次是否有重叠
+        _id: { $ne: scheduleId },
+        status: { $ne: "deleted" },
+      }).populate([
+        {
+          path: "teacherId",
+          select: "name",
+        },
+        {
+          path: "classId",
+          select: "name",
+        },
+        {
+          path: "courseId",
+          select: "name",
+        },
+      ]);
+
+      if (teacherConflicts.length > 0) {
+        conflicts.push(
+          ...teacherConflicts.map((conflict) => ({
+            type: "teacher",
+            existingSchedule: {
+              id: conflict._id,
+              courseName: conflict.courseId?.name || "未知课程",
+              teacherName: conflict.teacherId?.name || "未知教师",
+              className: conflict.classId?.name || "未知班级",
+              weeks: conflict.weeks,
+            },
+          }))
+        );
+      }
+
+      // 2. 检查班级时间冲突
+      const classConflicts = await Schedule2.find({
+        school,
+        tenant,
+        classId: sourceSchedule.classId,
+        timeSlotId: targetTimeSlot,
+        dayOfWeek: targetDay,
+        weeks: { $in: sourceSchedule.weeks }, // 检查周次是否有重叠
+        _id: { $ne: scheduleId },
+        status: { $ne: "deleted" },
+      }).populate([
+        {
+          path: "teacherId",
+          select: "name",
+        },
+        {
+          path: "classId",
+          select: "name",
+        },
+        {
+          path: "courseId",
+          select: "name",
+        },
+      ]);
+
+      if (classConflicts.length > 0) {
+        conflicts.push(
+          ...classConflicts.map((conflict) => ({
+            type: "class",
+            existingSchedule: {
+              id: conflict._id,
+              courseName: conflict.courseId?.name || "未知课程",
+              teacherName: conflict.teacherId?.name || "未知教师",
+              className: conflict.classId?.name || "未知班级",
+              weeks: conflict.weeks,
+            },
+          }))
+        );
+      }
+
+      res.json({
+        status: "success",
+        data: conflicts,
+      });
+    } catch (error) {
+      console.error("检查课程冲突失败:", error);
+      res.status(500).json({
+        status: "error",
+        message: "检查课程冲突失败",
+      });
+    }
+  };
+
+  /**
+   * 更新课程时间
+   */
+  updateScheduleTime = async (req, res) => {
+    try {
+      const { scheduleId, newTimeSlot, newDay } = req.body;
+      const { school, tenant } = req.user;
+
+      // 更新课程时间
+      const updatedSchedule = await Schedule2.findOneAndUpdate(
+        {
+          _id: scheduleId,
+          school,
+          tenant,
+          status: { $ne: "deleted" },
+        },
+        {
+          timeSlotId: newTimeSlot,
+          dayOfWeek: newDay,
+          updatedAt: new Date(),
+          updatedBy: req.user._id,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      ).populate([
+        {
+          path: "teacherId",
+          select: "name",
+        },
+        {
+          path: "classId",
+          select: "name",
+        },
+        {
+          path: "courseId",
+          select: "name",
+        },
+      ]);
+
+      if (!updatedSchedule) {
+        return res.status(404).json({
+          status: "error",
+          message: "课程不存在",
+        });
+      }
+
+      res.json({
+        status: "success",
+        data: updatedSchedule,
+      });
+    } catch (error) {
+      console.error("更新课程时间失败:", error);
+      res.status(500).json({
+        status: "error",
+        message: "更新课程时间失败",
+      });
+    }
+  };
 }
 
 module.exports = new ScheduleController2();
