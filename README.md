@@ -1,7 +1,7 @@
 # EduScheduler (E 排课)
 
 <p align="center">
-  <img src="docs/images/Elogo.png" alt="EduScheduler Logo" width="200"/>
+  <img src="docs/images/Elogo.jpg" alt="EduScheduler Logo" width="200"/>
   <br>
   <i>智能教学排课系统</i>
   <br>
@@ -190,15 +190,12 @@ npm run start
 - Vite
 - Element Plus
 - TailwindCSS
-- VueUse
-- Pinia
 
 ### 后端
 
 - Node.js
 - Express
-- MongoDB
-- Redis
+- Mongoose
 - JWT
 
 ## 贡献
