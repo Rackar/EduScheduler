@@ -67,6 +67,24 @@ export function getSchedules(params) {
   });
 }
 
+// 获取班级周课表 (新版)
+export function getClassSchedule(params) {
+  return request({
+    url: "/api/schedule2/class",
+    method: "get",
+    params,
+  });
+}
+
+// 获取教师周课表 (新版)
+export function getTeacherSchedule(params) {
+  return request({
+    url: "/api/schedule2/teacher",
+    method: "get",
+    params,
+  });
+}
+
 // 生成课表
 export function generateSchedule(data) {
   return request({

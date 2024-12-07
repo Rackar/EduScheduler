@@ -73,7 +73,7 @@ app.use("/api/exchanges", require("./routes/exchangeRoutes"));
 app.use("/api/classes", require("./routes/classRoutes"));
 app.use("/api/timeslots", require("./routes/timeSlotRoutes"));
 const scheduleRoutes2 = require("./routes/scheduleRoutes2");
-app.use("/api/schedules", scheduleRoutes2);
+app.use("/api/schedule2", scheduleRoutes2);
 app.use("/api/schedule-templates", require("./routes/scheduleTemplateRoutes"));
 app.use("/api/seed", require("./routes/seedRoutes"));
 

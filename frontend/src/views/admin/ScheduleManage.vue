@@ -72,7 +72,7 @@ import { useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
 import AutoScheduleDialog from "@/components/AutoScheduleDialog.vue"
 import { getClasses } from "@/api/class"
-import { getSchedules } from "@/api/schedule"
+import { getClassSchedule } from "@/api/schedule"
 import { getCurrentTemplate } from "@/api/schedule"
 
 const router = useRouter()
@@ -165,11 +165,20 @@ const fetchSchedules = async () => {
 
   try {
     loading.value = true
-    const { data } = await getSchedules({
+    const { data } = await getClassSchedule({
       classId: currentClass.value,
       week: currentWeek.value
     })
-    scheduleData.value = data || [] // 确保始终是数组
+
+    if (data.data)
+      // 转换数据格式
+      scheduleData.value = data.data.map(schedule => ({
+        timeSlotId: schedule.timeSlotId,
+        day: schedule.dayOfWeek,
+        courseName: schedule.courseId.name,
+        teacherName: schedule.teacherId.name,
+        status: schedule.status || "draft"
+      }))
   } catch (error) {
     console.error("获取课表失败:", error)
     ElMessage.error("获取课表失败")

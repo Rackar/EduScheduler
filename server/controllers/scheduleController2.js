@@ -295,24 +295,18 @@ class ScheduleController2 {
       classId,
       weeks: { $in: [parseInt(week)] },
       status: { $ne: "deleted" },
-    }).populate([
-      {
-        path: "courseId",
-        select: "name color", // 课程名称和颜色
-      },
-      {
-        path: "teacherId",
-        select: "name", // 教师姓名
-      },
-    ]);
-
-    // 按照 dayOfWeek 和 timeSlotId 排序
-    schedules.sort((a, b) => {
-      if (a.dayOfWeek === b.dayOfWeek) {
-        return a.timeSlotId.localeCompare(b.timeSlotId);
-      }
-      return a.dayOfWeek - b.dayOfWeek;
-    });
+    })
+      .populate([
+        {
+          path: "courseId",
+          select: "name color", // 课程名称和颜色
+        },
+        {
+          path: "teacherId",
+          select: "name", // 教师姓名
+        },
+      ])
+      .sort({ dayOfWeek: 1, timeSlotId: 1 });
 
     res.status(200).json({
       status: "success",
@@ -341,24 +335,18 @@ class ScheduleController2 {
       teacherId,
       weeks: { $in: [parseInt(week)] },
       status: { $ne: "deleted" },
-    }).populate([
-      {
-        path: "courseId",
-        select: "name color",
-      },
-      {
-        path: "classId",
-        select: "name grade", // 班级名称和年级
-      },
-    ]);
-
-    // 按照 dayOfWeek 和 timeSlotId 排序
-    schedules.sort((a, b) => {
-      if (a.dayOfWeek === b.dayOfWeek) {
-        return a.timeSlotId.localeCompare(b.timeSlotId);
-      }
-      return a.dayOfWeek - b.dayOfWeek;
-    });
+    })
+      .populate([
+        {
+          path: "courseId",
+          select: "name color",
+        },
+        {
+          path: "classId",
+          select: "name grade", // 班级名称和年级
+        },
+      ])
+      .sort({ dayOfWeek: 1, timeSlotId: 1 });
 
     res.status(200).json({
       status: "success",
