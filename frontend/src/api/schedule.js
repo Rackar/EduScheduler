@@ -106,7 +106,7 @@ export function getTeacherScheduleFull(params) {
 // 生成课表
 export function generateSchedule(data) {
   return request({
-    url: "/api/schedules/generate",
+    url: "/api/schedule2/generate",
     method: "post",
     data,
   });

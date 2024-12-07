@@ -2,7 +2,7 @@
   <div>
     <!-- 筛选条件 -->
     <div class="mb-4 flex items-center space-x-4">
-      <el-select v-model="selectedTeachers" multiple collapse-tags collapse-tags-tooltip placeholder="选择教师"
+      <el-select v-model="selectedTeachers" multiple collapse-tags collapse-tags-tooltip placeholder="选择教师" clearable
         style="width: 400px" @change="val => console.log('选中的教师:', val)">
         <el-option v-for="teacher in teachers" :key="teacher.id || teacher._id" :label="teacher.name"
           :value="teacher.id || teacher._id" />
@@ -34,7 +34,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue"
 import { ElMessage } from "element-plus"
-import { getTeacherList } from "@/api/teacher"
+import { getAllTeachers } from "@/api/teacher"
 import { getTeacherScheduleFull } from "@/api/schedule"
 import { getCellClass, convertToTableData, formatWeeks, mergeScheduleWeeks } from "@/utils/schedule"
 
@@ -56,7 +56,7 @@ const scheduleTableData = computed(() => {
   return convertToTableDataMultiple(props.currentTemplate, mergedSchedules)
 })
 
-// 转换多教师数据为表���格式
+// 转换多教师数据为表格格式
 const convertToTableDataMultiple = (template, scheduleData = []) => {
   if (!template?.periods) return []
 
@@ -96,9 +96,9 @@ const convertToTableDataMultiple = (template, scheduleData = []) => {
 // 获取教师列表
 const fetchTeachers = async () => {
   try {
-    const { data } = await getTeacherList()
+    const { data } = await getAllTeachers()
     console.log("教师数据:", data)
-    teachers.value = data.items.filter(teacher => teacher.status === "active").map(teacher => ({
+    teachers.value = data.filter(teacher => teacher.status === "active").map(teacher => ({
       ...teacher,
       id: teacher.id || teacher._id
     }))
@@ -144,7 +144,7 @@ const fetchSchedules = async () => {
     })
 
     scheduleData.value = allSchedules
-    console.log("转换��的数据:", scheduleData.value)
+    console.log("转换后的数据:", scheduleData.value)
   } catch (error) {
     console.error("获取课表失败:", error)
     ElMessage.error("获取课表失败")

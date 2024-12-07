@@ -6,8 +6,11 @@ const { protect, schoolAdmin } = require("../middleware/authMiddleware");
 // 需要认证的路由
 router.use(protect);
 
-// 获取教师列表
+// 获取教师列表（分页）
 router.get("/", teacherController.getTeachers);
+
+// 获取所有教师（不分页）
+router.get("/all", teacherController.getAllTeachers);
 
 // 获取单个教师
 router.get("/:id", teacherController.getTeacherById);

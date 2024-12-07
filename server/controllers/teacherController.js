@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 
-// @desc    获取教师列表
+// @desc    获取教师列表（分页）
 // @route   GET /api/teachers
 // @access  Private
 exports.getTeachers = asyncHandler(async (req, res) => {
@@ -61,6 +61,44 @@ exports.getTeachers = asyncHandler(async (req, res) => {
     page: parseInt(page),
     size: parseInt(size),
   });
+});
+
+// @desc    获取所有教师（不分页）
+// @route   GET /api/teachers/all
+// @access  Private
+exports.getAllTeachers = asyncHandler(async (req, res) => {
+  const filter = {
+    tenant: req.user.tenant,
+    school: req.user.school,
+    roles: { $in: ["teacher"] },
+  };
+
+  const teachers = await User.find(filter)
+    .select("-password")
+    .populate("profile.courses", "name code")
+    .sort({ name: 1 });
+
+  // 转换教师数据，确保正确处理 ObjectId
+  const transformedTeachers = teachers.map((teacher) => {
+    const teacherObj = teacher.toObject();
+    return {
+      ...teacherObj,
+      id: teacherObj._id.toString(),
+      _id: undefined,
+      tenant: teacherObj.tenant?.toString(),
+      school: teacherObj.school?.toString(),
+      profile: {
+        ...teacherObj.profile,
+        courses: teacherObj.profile?.courses?.map((course) => ({
+          ...course,
+          id: course._id.toString(),
+          _id: undefined,
+        })),
+      },
+    };
+  });
+
+  res.json(transformedTeachers);
 });
 
 // @desc    获取单个教师
