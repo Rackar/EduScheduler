@@ -35,4 +35,10 @@ router.delete("/:id", schoolAdmin, scheduleController.deleteSchedule);
 // 批量删除 - 仅管理员
 router.delete("/batch", schoolAdmin, scheduleController.batchDelete);
 
+// 获取班级某周的排课结果
+router.get("/class", scheduleController.getScheduleByClassAndWeek);
+
+// 获取教师某周的排课结果
+router.get("/teacher", scheduleController.getScheduleByTeacherAndWeek);
+
 module.exports = router;
