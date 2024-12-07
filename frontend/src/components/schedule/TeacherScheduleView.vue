@@ -2,8 +2,9 @@
   <div>
     <!-- 筛选条件 -->
     <div class="mb-4 flex space-x-4">
-      <el-select v-model="currentTeacher" placeholder="选择教师">
-        <el-option v-for="teacher in teachers" :key="teacher._id" :label="teacher.name" :value="teacher._id" />
+      <el-select v-model="currentTeacher" placeholder="选择教师" @change="val => console.log('选中的教师:', val)">
+        <el-option v-for="teacher in teachers" :key="teacher.id || teacher._id" :label="teacher.name"
+          :value="teacher.id || teacher._id" />
       </el-select>
     </div>
 
@@ -52,9 +53,15 @@ const scheduleTableData = computed(() => {
 const fetchTeachers = async () => {
   try {
     const { data } = await getTeacherList()
-    teachers.value = data.filter(teacher => teacher.status === "active")
+    // 打印一下数据结构
+    console.log("教师数据:", data)
+    teachers.value = data.items.filter(teacher => teacher.status === "active").map(teacher => ({
+      ...teacher,
+      id: teacher.id || teacher._id // 确保有 id 字段
+    }))
     if (teachers.value.length > 0) {
-      currentTeacher.value = teachers.value[0]._id
+      console.log("第一个教师:", teachers.value[0])
+      currentTeacher.value = teachers.value[0].id || teachers.value[0]._id
     }
   } catch (error) {
     console.error("获取教师列表失败:", error)
@@ -68,19 +75,26 @@ const fetchSchedules = async () => {
 
   try {
     loading.value = true
-    const { data } = await getTeacherScheduleFull({
+    const response = await getTeacherScheduleFull({
       teacherId: currentTeacher.value
     })
 
+    console.log("API返回的数据:", response)
+
     // 转换数据格式
-    scheduleData.value = data.map(schedule => ({
-      timeSlotId: schedule.timeSlotId,
-      dayOfWeek: schedule.dayOfWeek,
-      courseName: schedule.courseId?.name || "未知课程",
-      className: schedule.classId?.name || "未知班级",
-      status: schedule.status || "draft",
-      weeks: schedule.weeks
-    }))
+    scheduleData.value = response.data.data.map(schedule => {
+      console.log("处理课程:", schedule)
+      return {
+        timeSlotId: schedule.timeSlotId,
+        dayOfWeek: schedule.dayOfWeek,
+        courseName: schedule.courseId?.name || "未知课程",
+        className: schedule.classId?.name || "未知班级",
+        status: schedule.status || "draft",
+        weeks: schedule.weeks || []
+      }
+    })
+
+    console.log("转换后的数据:", scheduleData.value)
   } catch (error) {
     console.error("获取课表失败:", error)
     ElMessage.error("获取课表失败")
