@@ -53,12 +53,17 @@
           <div v-for="(conflict, index) in conflictList" :key="index"
             class="p-4 bg-red-50 rounded border border-red-200">
             <div class="font-medium text-red-700 mb-2">
-              {{ conflict.type === 'teacher' ? '教师时间冲突' : '班级时间冲突' }}
+              {{ getConflictTypeText(conflict.type) }}
             </div>
             <div class="text-sm space-y-1">
               <p>课程：{{ conflict.schedule.courseName }}</p>
               <p>教师：{{ conflict.schedule.teacherName }}</p>
-              <p>班级：{{ conflict.schedule.className }}</p>
+              <p>
+                班级：
+                <el-button type="primary" link @click="switchToClass(conflict.schedule.classId)">
+                  {{ conflict.schedule.className }}
+                </el-button>
+              </p>
               <p>时间：周{{ conflict.originalDay }}第{{ getTimeSlotName(conflict.originalTimeSlot) }}节</p>
               <p>周次：{{ formatWeeks(conflict.schedule.weeks) }}</p>
               <div class="mt-2 text-xs text-gray-500">
@@ -76,7 +81,12 @@
 import { ref, computed, onMounted } from "vue"
 import { ElMessage } from "element-plus"
 import { getClassList } from "@/api/class"
-import { getClassScheduleFull, checkScheduleConflicts, updateScheduleTime } from "@/api/schedule"
+import {
+  getClassScheduleFull,
+  checkScheduleConflicts,
+  updateScheduleTime,
+  getTeacherScheduleFull
+} from "@/api/schedule"
 import { getCellClass, convertToTableData, formatWeeks, mergeScheduleWeeks } from "@/utils/schedule"
 
 const props = defineProps({
@@ -131,12 +141,16 @@ const fetchSchedules = async () => {
       classId: currentClass.value
     })
 
+    // 转换数据格式
     scheduleData.value = response.data.data.map(schedule => ({
       id: schedule._id,
       timeSlotId: schedule.timeSlotId,
       dayOfWeek: schedule.dayOfWeek,
       courseName: schedule.courseId?.name || "未知课程",
       teacherName: schedule.teacherId?.name || "未知教师",
+      teacherId: schedule.teacherId?._id || schedule.teacherId, // 添加教师ID
+      className: schedule.classId?.name || "未知班级",
+      classId: schedule.classId?._id || schedule.classId,
       status: schedule.status || "draft",
       weeks: schedule.weeks || []
     }))
@@ -163,6 +177,12 @@ const handleDragStart = (event, schedule, row, column) => {
     sourceDay: getDayNumber(column.label)
   }
   event.dataTransfer.effectAllowed = "move"
+  try {
+    event.dataTransfer.setData('text/plain', schedule.id)
+  } catch (e) {
+    // 忽略设置数据失败的错误
+    console.warn('设置拖拽数据失败，但不影响功能')
+  }
 }
 
 // 拖拽结束
@@ -174,6 +194,7 @@ const handleDragEnd = () => {
 
 // 拖拽悬停
 const handleDragOver = (event, row, column) => {
+  event.preventDefault()
   if (!draggingSchedule.value) return
   dragTarget.value = {
     timeSlotId: row.timeSlotId,
@@ -197,42 +218,73 @@ const handleDrop = async (event, row, column) => {
     // 获取目标位置的课程
     const targetCell = row[column.label]
 
-    // 检查冲突
+    // 检查当前班级的冲突
     const response = await checkScheduleConflicts({
       scheduleId: sourceSchedule.id,
       targetTimeSlot,
       targetDay
     })
 
-    if (response.data.data.length > 0) {
-      // 如果目标位置有课程，将其加入冲突列表
-      if (targetCell && Array.isArray(targetCell)) {
-        targetCell.forEach(schedule => {
-          // 检查是否已在冲突列表中
-          const existingConflict = conflictList.value.find(
-            conflict => conflict.schedule.id === schedule.id
-          )
-          if (!existingConflict) {
-            conflictList.value.push({
-              type: response.data.data[0].type,
-              schedule: {
-                ...schedule,
-                className: row[column.label]?.className || "未知班级"
-              },
-              originalTimeSlot: targetTimeSlot,
-              originalDay: targetDay
-            })
-          }
-        })
-      }
+    // 获取教师ID
+    const teacherId = sourceSchedule.teacherId
+    if (!teacherId) {
+      console.warn("课程缺少教师ID:", sourceSchedule)
+    } else {
+      console.log("当前课程教师ID:", teacherId)
+    }
+
+    // 检查教师在其他班级的冲突
+    let teacherConflicts = []
+    if (teacherId) {
+      teacherConflicts = await checkTeacherOtherClassConflicts(
+        teacherId,
+        targetTimeSlot,
+        targetDay,
+        sourceSchedule.weeks,
+        sourceSchedule.id
+      )
+    }
+
+    // 合并所有冲突
+    const allConflicts = [
+      ...(response.data.data || []).map(conflict => ({
+        type: conflict.type,
+        schedule: {
+          ...conflict.existingSchedule,
+          id: conflict.existingSchedule.id,
+          timeSlotId: targetTimeSlot,
+          dayOfWeek: targetDay,
+          classId: conflict.existingSchedule.classId
+        },
+        originalTimeSlot: targetTimeSlot,
+        originalDay: targetDay
+      })),
+      ...teacherConflicts
+    ]
+
+    if (allConflicts.length > 0) {
+      // 添加新的冲突到列表中
+      allConflicts.forEach(conflict => {
+        const existingConflict = conflictList.value.find(
+          c => c.schedule.id === conflict.schedule.id
+        )
+        if (!existingConflict) {
+          conflictList.value.push(conflict)
+        }
+      })
 
       // 更新目标课程状态
       targetSchedule.value = sourceSchedule
       hasConflict.value = true
+
+      // 显示冲突提示
+      ElMessage.warning(`发现 ${allConflicts.length} 个课程冲突，请处理`)
+      return // 有冲突时不执行移动操作
     }
 
-    // 更新源课程位置
+    // 只有在没有冲突时才更新源课程位置
     await updateSchedulePosition(sourceSchedule.id, targetTimeSlot, targetDay)
+    ElMessage.success("课程调整成功")
 
   } catch (error) {
     console.error("处理课程拖拽失败:", error)
@@ -250,13 +302,10 @@ const updateSchedulePosition = async (scheduleId, timeSlotId, day) => {
       newDay: day
     })
 
-    // 先更新课程数据
+    // 刷新数据
     await fetchSchedules()
-
-    // 然后检查冲突状态
+    // 检查并更新冲突列表
     await updateConflictList()
-
-    ElMessage.success("课程调整成功")
   } catch (error) {
     console.error("更新课程时间失败:", error)
     ElMessage.error("更新课程时间失败")
@@ -270,7 +319,7 @@ const isTargetSchedule = (schedule) => {
   return targetSchedule.value?.id === schedule.id
 }
 
-// 判断是否为冲突课程
+// 判断是否为冲突程
 const isConflictSchedule = (schedule) => {
   return conflictList.value.some(conflict => conflict.schedule.id === schedule.id)
 }
@@ -302,7 +351,7 @@ const getTimeSlotName = (timeSlotId) => {
   return timeSlot?.name || '未知'
 }
 
-// 检查课程是否仍然冲突
+// 检查课程是否冲突
 const checkScheduleStillConflicts = async (schedule) => {
   try {
     // 检查当前位置是否有冲突
@@ -323,7 +372,7 @@ const updateConflictList = async () => {
   // 获取最新的课程数据
   await fetchSchedules()
 
-  // 检查每个冲突课程的当前状态
+  // 检查每冲突课程的当前状态
   const newConflictList = []
   for (const conflict of conflictList.value) {
     // 在最新的课程数据中查找这个课程
@@ -354,6 +403,93 @@ const updateConflictList = async () => {
   }
 }
 
+// 获取冲突类型文本
+const getConflictTypeText = (type) => {
+  const typeMap = {
+    'teacher': '教师时间冲突',
+    'class': '班级时间冲突',
+    'teacher_other_class': '教师在其他班级有课'
+  }
+  return typeMap[type] || '未知冲突'
+}
+
+// 切换到指定班级
+const switchToClass = async (classId) => {
+  try {
+    // 在班级列表中查找对应的班级
+    const targetClass = classes.value.find(cls =>
+      (cls.id === classId || cls._id === classId)
+    )
+
+    if (!targetClass) {
+      console.warn("未找到目标班级:", classId)
+      ElMessage.warning("未找到目标班级")
+      return
+    }
+
+    // 更新选中的班级
+    currentClass.value = targetClass.id || targetClass._id
+
+    // 刷新课表数据
+    await fetchSchedules()
+
+    ElMessage.success(`已切换到 ${targetClass.name} 的课表`)
+  } catch (error) {
+    console.error("切换班级失败:", error)
+    ElMessage.error("切换班级失败")
+  }
+}
+
+// 检查教师在其他班级的课程冲突
+const checkTeacherOtherClassConflicts = async (teacherId, targetTimeSlot, targetDay, weeks, excludeScheduleId) => {
+  if (!teacherId) {
+    console.warn("未提供教师ID")
+    return []
+  }
+
+  try {
+    console.log("查询教师课程，教师ID:", teacherId)
+    // 获取教师在所有班级的课程
+    const response = await getTeacherScheduleFull({
+      teacherId: String(teacherId) // 确保 ID 是字符串类型
+    })
+
+    if (!response.data?.data) {
+      console.warn("未获取到教师课程数据")
+      return []
+    }
+
+    const teacherSchedules = response.data.data
+
+    // 筛选出在目标时间段有冲突的课程
+    const conflicts = teacherSchedules.filter(schedule =>
+      schedule._id !== excludeScheduleId && // 排除当前课程
+      schedule.timeSlotId === targetTimeSlot &&
+      schedule.dayOfWeek === targetDay &&
+      schedule.weeks.some(week => weeks.includes(week)) // 检查周次是否有重叠
+    )
+
+    return conflicts.map(schedule => ({
+      type: 'teacher_other_class',
+      schedule: {
+        id: schedule._id,
+        timeSlotId: schedule.timeSlotId,
+        dayOfWeek: schedule.dayOfWeek,
+        courseName: schedule.courseId?.name || "未知课程",
+        teacherName: schedule.teacherId?.name || "未知教师",
+        className: schedule.classId?.name || "未知班级",
+        classId: schedule.classId?._id,
+        weeks: schedule.weeks || []
+      },
+      originalTimeSlot: targetTimeSlot,
+      originalDay: targetDay
+    }))
+  } catch (error) {
+    console.error("检查教师其他班级冲突失败:", error)
+    return []
+  }
+}
+
 // 页面加载时初始化数据
 onMounted(() => {
   fetchClasses()
@@ -364,5 +500,12 @@ onMounted(() => {
 .el-table :deep(td) {
   height: 100px;
   padding: 0;
+}
+
+[draggable] {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 </style>

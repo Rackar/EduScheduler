@@ -324,7 +324,7 @@ class ScheduleController2 {
     if (!teacherId || !week) {
       return res.status(400).json({
         status: "error",
-        message: "请提供教师ID和周次",
+        message: "请提供教���ID和周次",
       });
     }
 
@@ -504,6 +504,7 @@ class ScheduleController2 {
               courseName: conflict.courseId?.name || "未知课程",
               teacherName: conflict.teacherId?.name || "未知教师",
               className: conflict.classId?.name || "未知班级",
+              classId: conflict.classId?._id, // 添加班级ID
               weeks: conflict.weeks,
             },
           }))
@@ -544,6 +545,7 @@ class ScheduleController2 {
               courseName: conflict.courseId?.name || "未知课程",
               teacherName: conflict.teacherId?.name || "未知教师",
               className: conflict.classId?.name || "未知班级",
+              classId: conflict.classId?._id, // 添加班级ID
               weeks: conflict.weeks,
             },
           }))
