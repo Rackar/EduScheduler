@@ -4,7 +4,11 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: "./",
   plugins: [vue()],
+  build: {
+    sourcemap: true, // 开启source map
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),

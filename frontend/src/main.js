@@ -12,12 +12,10 @@ const app = createApp(App);
 
 // 初始化用户状态
 const userStore = useUserStore();
+userStore.init();
 
-// 方案1：使用异步函数包装
-const initApp = async () => {
-  await userStore.init();
+app.use(ElementPlus);
+setupRouteGuards(router);
+app.use(router);
 
-  app.mount("#app");
-};
-
-initApp();
+app.mount("#app");
