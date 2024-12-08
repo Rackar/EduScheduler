@@ -1,7 +1,7 @@
 <template>
   <div class="flex gap-4">
     <!-- 左侧课表区域 -->
-    <div class="flex-1">
+    <div class="w-4/5">
       <!-- 筛选条件 -->
       <div class="mb-4 flex space-x-4">
         <el-select v-model="currentClass" placeholder="选择班级" @change="handleClassChange">
@@ -19,22 +19,21 @@
               @dragover.prevent="handleDragOver($event, row, column)" @drop.prevent="handleDrop($event, row, column)">
 
               <!-- 课程内容 -->
-              <div v-if="row[day]" class="space-y-2">
-                <template v-if="Array.isArray(row[day])">
-                  <div v-for="schedule in row[day]" :key="schedule.id" class="p-2 rounded cursor-move relative" :class="[
+              <template v-if="Array.isArray(row[day])">
+                <div v-for="schedule in row[day]" :key="schedule.id"
+                  class="p-2 rounded cursor-move relative mb-2 last:mb-0" :class="[
                     getCellClass(schedule),
                     {
                       'border-2 border-dashed border-green-500': isTargetSchedule(schedule),
                       'border-2 border-dashed border-red-500': isConflictSchedule(schedule)
                     }
                   ]" draggable="true" @dragstart="handleDragStart($event, schedule, row, column)"
-                    @dragend="handleDragEnd">
-                    <p class="font-medium">{{ schedule.courseName }}</p>
-                    <p class="text-sm">{{ schedule.teacherName }}</p>
-                    <p class="text-xs text-gray-500">({{ formatWeeks(schedule.weeks) }})</p>
-                  </div>
-                </template>
-              </div>
+                  @dragend="handleDragEnd">
+                  <p class="font-medium">{{ schedule.courseName }}</p>
+                  <p class="text-sm">{{ schedule.teacherName }}</p>
+                  <p class="text-xs text-gray-500">({{ formatWeeks(schedule.weeks) }})</p>
+                </div>
+              </template>
 
               <!-- 拖拽提示 -->
               <div v-if="isDragTarget(row, column)" class="absolute inset-0 border-2 border-dashed"
@@ -46,21 +45,26 @@
       </el-table>
     </div>
 
-    <!-- 右侧冲突列表抽屉 -->
-    <div v-if="conflictList.length > 0" class="w-80 border-l p-4 bg-white">
-      <div class="text-lg font-medium mb-4">待处理冲突 ({{ conflictList.length }})</div>
-      <div class="space-y-4">
-        <div v-for="(conflict, index) in conflictList" :key="index" class="p-4 bg-red-50 rounded border border-red-200">
-          <div class="font-medium text-red-700 mb-2">
-            {{ conflict.type === 'teacher' ? '教师时间冲突' : '班级时间冲突' }}
-          </div>
-          <div class="text-sm space-y-1">
-            <p>课程：{{ conflict.schedule.courseName }}</p>
-            <p>教师：{{ conflict.schedule.teacherName }}</p>
-            <p>周次：{{ formatWeeks(conflict.schedule.weeks) }}</p>
-            <p class="text-xs text-gray-500 mt-2">
-              请将此课程拖拽到其他时段
-            </p>
+    <!-- 右侧冲突列表 -->
+    <div v-if="conflictList.length > 0" class="w-1/5 border-l">
+      <div class="p-4">
+        <div class="text-lg font-medium mb-4">待处理冲突 ({{ conflictList.length }})</div>
+        <div class="space-y-4">
+          <div v-for="(conflict, index) in conflictList" :key="index"
+            class="p-4 bg-red-50 rounded border border-red-200">
+            <div class="font-medium text-red-700 mb-2">
+              {{ conflict.type === 'teacher' ? '教师时间冲突' : '班级时间冲突' }}
+            </div>
+            <div class="text-sm space-y-1">
+              <p>课程：{{ conflict.schedule.courseName }}</p>
+              <p>教师：{{ conflict.schedule.teacherName }}</p>
+              <p>班级：{{ conflict.schedule.className }}</p>
+              <p>时间：周{{ conflict.originalDay }}第{{ getTimeSlotName(conflict.originalTimeSlot) }}节</p>
+              <p>周次：{{ formatWeeks(conflict.schedule.weeks) }}</p>
+              <div class="mt-2 text-xs text-gray-500">
+                请将此课程拖拽到其他时段
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -109,6 +113,7 @@ const fetchClasses = async () => {
     }))
     if (classes.value.length > 0) {
       currentClass.value = classes.value[0].id || classes.value[0]._id
+      handleClassChange()
     }
   } catch (error) {
     console.error("获取班级列表失败:", error)
@@ -201,19 +206,24 @@ const handleDrop = async (event, row, column) => {
 
     if (response.data.data.length > 0) {
       // 如果目标位置有课程，将其加入冲突列表
-      if (targetCell) {
-        // 检查是否已在冲突列表中
-        const existingConflict = conflictList.value.find(
-          conflict => conflict.schedule.id === targetCell.id
-        )
-        if (!existingConflict) {
-          conflictList.value.push({
-            type: response.data.data[0].type,
-            schedule: targetCell,
-            originalTimeSlot: targetTimeSlot,
-            originalDay: targetDay
-          })
-        }
+      if (targetCell && Array.isArray(targetCell)) {
+        targetCell.forEach(schedule => {
+          // 检查是否已在冲突列表中
+          const existingConflict = conflictList.value.find(
+            conflict => conflict.schedule.id === schedule.id
+          )
+          if (!existingConflict) {
+            conflictList.value.push({
+              type: response.data.data[0].type,
+              schedule: {
+                ...schedule,
+                className: row[column.label]?.className || "未知班级"
+              },
+              originalTimeSlot: targetTimeSlot,
+              originalDay: targetDay
+            })
+          }
+        })
       }
 
       // 更新目标课程状态
@@ -242,19 +252,14 @@ const updateSchedulePosition = async (scheduleId, timeSlotId, day) => {
     ElMessage.success("课程调整成功")
     // 刷新数据
     await fetchSchedules()
+    // 检查并更新冲突列表
+    await updateConflictList()
   } catch (error) {
     console.error("更新课程时间失败:", error)
     ElMessage.error("更新课程时间失败")
   } finally {
     loading.value = false
   }
-}
-
-// 判断是否为拖拽目标
-const isDragTarget = (row, column) => {
-  if (!dragTarget.value) return false
-  return dragTarget.value.timeSlotId === row.timeSlotId &&
-    dragTarget.value.day === getDayNumber(column.label)
 }
 
 // 判断是否为目标课程
@@ -267,6 +272,13 @@ const isConflictSchedule = (schedule) => {
   return conflictList.value.some(conflict => conflict.schedule.id === schedule.id)
 }
 
+// 判断是否为拖拽目标
+const isDragTarget = (row, column) => {
+  if (!dragTarget.value) return false
+  return dragTarget.value.timeSlotId === row.timeSlotId &&
+    dragTarget.value.day === getDayNumber(column.label)
+}
+
 // 获取星期几对应的数字
 const getDayNumber = (dayLabel) => {
   const dayMap = {
@@ -277,6 +289,50 @@ const getDayNumber = (dayLabel) => {
     "周五": 5
   }
   return dayMap[dayLabel] || 1
+}
+
+// 获取时间段名称
+const getTimeSlotName = (timeSlotId) => {
+  const timeSlot = props.currentTemplate?.periods?.morning?.find(p => p.id === timeSlotId) ||
+    props.currentTemplate?.periods?.afternoon?.find(p => p.id === timeSlotId) ||
+    props.currentTemplate?.periods?.evening?.find(p => p.id === timeSlotId)
+  return timeSlot?.name || '未知'
+}
+
+// 检查课程是否仍然冲突
+const checkScheduleStillConflicts = async (schedule) => {
+  try {
+    const response = await checkScheduleConflicts({
+      scheduleId: schedule.id,
+      targetTimeSlot: schedule.timeSlotId,
+      targetDay: schedule.dayOfWeek
+    })
+    return response.data.data.length > 0
+  } catch (error) {
+    console.error("检查冲突状态失败:", error)
+    return true // 如果检查失败，保守起见认为仍然冲突
+  }
+}
+
+// 更新冲突列表和样式
+const updateConflictList = async () => {
+  const newConflictList = []
+  for (const conflict of conflictList.value) {
+    const stillConflicts = await checkScheduleStillConflicts(conflict.schedule)
+    if (stillConflicts) {
+      newConflictList.push(conflict)
+    }
+  }
+
+  // 如果冲突列表发生变化，更新相关状态
+  if (newConflictList.length !== conflictList.value.length) {
+    conflictList.value = newConflictList
+    // 如果没有冲突了，清除所有状态
+    if (newConflictList.length === 0) {
+      targetSchedule.value = null
+      hasConflict.value = false
+    }
+  }
 }
 
 // 页面加载时初始化数据
