@@ -249,11 +249,14 @@ const updateSchedulePosition = async (scheduleId, timeSlotId, day) => {
       newTimeSlot: timeSlotId,
       newDay: day
     })
-    ElMessage.success("课程调整成功")
-    // 刷新数据
+
+    // 先更新课程数据
     await fetchSchedules()
-    // 检查并更新冲突列表
+
+    // 然后检查冲突状态
     await updateConflictList()
+
+    ElMessage.success("课程调整成功")
   } catch (error) {
     console.error("更新课程时间失败:", error)
     ElMessage.error("更新课程时间失败")
@@ -302,6 +305,7 @@ const getTimeSlotName = (timeSlotId) => {
 // 检查课程是否仍然冲突
 const checkScheduleStillConflicts = async (schedule) => {
   try {
+    // 检查当前位置是否有冲突
     const response = await checkScheduleConflicts({
       scheduleId: schedule.id,
       targetTimeSlot: schedule.timeSlotId,
@@ -316,19 +320,34 @@ const checkScheduleStillConflicts = async (schedule) => {
 
 // 更新冲突列表和样式
 const updateConflictList = async () => {
+  // 获取最新的课程数据
+  await fetchSchedules()
+
+  // 检查每个冲突课程的当前状态
   const newConflictList = []
   for (const conflict of conflictList.value) {
-    const stillConflicts = await checkScheduleStillConflicts(conflict.schedule)
-    if (stillConflicts) {
-      newConflictList.push(conflict)
+    // 在最新的课程数据中查找这个课程
+    const currentSchedule = scheduleData.value.find(s => s.id === conflict.schedule.id)
+    if (currentSchedule) {
+      const stillConflicts = await checkScheduleStillConflicts(currentSchedule)
+      if (stillConflicts) {
+        // 更新课程的最新状态
+        newConflictList.push({
+          ...conflict,
+          schedule: {
+            ...currentSchedule,
+            className: conflict.schedule.className
+          }
+        })
+      }
     }
   }
 
-  // 如果冲突列表发生变化，更新相关状态
+  // 更新状态
   if (newConflictList.length !== conflictList.value.length) {
     conflictList.value = newConflictList
-    // 如果没有冲突了，清除所有状态
     if (newConflictList.length === 0) {
+      // 清除所有冲突状态
       targetSchedule.value = null
       hasConflict.value = false
     }
