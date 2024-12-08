@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("./initDotenv");
 const mongoose = require("mongoose");
 const Schedule = require("../models/Schedule");
 

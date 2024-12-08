@@ -1,10 +1,13 @@
 {
-  "name": "paike-server",
+  "name": "edus-server",
   "version": "1.0.0",
-  "description": "排课系统服务端",
+  "description": "E排课服务端",
+  "author": {
+    "name": "Rackar"
+  },
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "pm2 start ecosystem.config.js --env production",
     "dev": "nodemon server.js",
     "init:superadmin": "node scripts/initSuperAdmin.js",
     "clean": "node scripts/cleanData.js",

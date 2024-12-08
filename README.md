@@ -39,6 +39,8 @@
 
 本项目开发过程大量使用了 Cursor 和 Claude 模型，特此感谢。
 
+[演示系统地址](https://www.codingyang.com/edus) [《EduS 基本教程》](docs/guide.md)
+
 ## 简介
 
 EduScheduler (E 排课) 是一个开源的智能教学排课系统，专为学校和教育机构设计。它能够自动生成符合各种教学需求和约束条件的课程表，大幅提高排课效率，降低人工排课的复杂度。
@@ -118,9 +120,11 @@ npm install
 
 ```bash
 # 复制环境变量示例文件
-cp .env.example .env
+cp .env.example .env.development
+cp .env.example .env.production
 
-# 编辑 .env 文件，配置必要的环境变量
+# 开发环境编辑 .env.development 文件，配置必要的环境变量
+# 生产环境编辑 .env.production 文件，配置必要的环境变量
 # MONGODB_URI 请替换为您的 MongoDB 数据库连接字符串
 # JWT_SECRET 请替换为您的 JWT 密钥
 ```
@@ -132,6 +136,10 @@ cp .env.example .env
 cd server
 npm run dev
 
+# 初始化超级管理员
+npm run init:superadmin
+# 默认用户名密码：superadmin/edus2024
+
 # 启动前端服务
 cd frontend
 npm run dev
@@ -139,7 +147,7 @@ npm run dev
 
 后端接口地址默认在 http://localhost:3000
 
-浏览器访问 http://localhost:5173 即可看到应用界面
+浏览器访问 http://localhost:5173 即可看到应用界面。
 
 ## 部署
 
@@ -176,7 +184,6 @@ server {
 
 ```bash
 cd server
-npm run build
 npm run start
 ```
 

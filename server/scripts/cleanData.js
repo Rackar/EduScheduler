@@ -1,9 +1,8 @@
-require("dotenv").config();
+require("./initDotenv");
 const mongoose = require("mongoose");
 const Tenant = require("../models/Tenant");
 const School = require("../models/School");
 const User = require("../models/User");
-const ScheduleTemplate = require("../models/ScheduleTemplate");
 
 const cleanData = async () => {
   try {

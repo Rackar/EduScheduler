@@ -1,8 +1,12 @@
 {
-  "name": "frontend",
+  "name": "edus-frontend",
   "private": true,
-  "version": "0.0.0",
+  "description": "E排课前端",
+  "version": "1.0.0",
   "type": "module",
+  "author": {
+    "name": "Rackar"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,11 +1,18 @@
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
+// 加载环境变量
+const path = require("path");
+
+// 根据 NODE_ENV 加载对应的环境变量文件
+require("dotenv").config({
+  path: path.resolve(
+    __dirname,
+    `.env.${process.env.NODE_ENV || "development"}`
+  ),
+});
+console.log("当前环境:", process.env.NODE_ENV);
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
-
-// 加载环境变量
-dotenv.config();
 
 // 连接数据库
 connectDB();

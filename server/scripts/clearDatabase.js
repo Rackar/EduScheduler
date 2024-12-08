@@ -1,8 +1,5 @@
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-
-// 加载环境变量
-dotenv.config();
+require("./initDotenv");
 
 // 导入所有模型
 const User = require("../models/User");
