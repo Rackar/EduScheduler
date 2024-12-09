@@ -39,7 +39,15 @@
 
 本项目开发过程大量使用了 Cursor 和 Claude 模型，特此感谢。
 
-[演示系统地址](https://www.codingyang.com/edus) [《EduS 基本教程》](docs/guide.md)
+[演示系统地址](https://www.codingyang.com/edus) 账户密码: admin/admin123
+
+[《EduS 基本教程》](docs/guide.md)
+
+基本功能演示视频：
+<video width="640" height="480" controls>
+
+<source src="https://edus.codingyang.com/docs/edus_demo1.mp4" type="video/mp4">
+</video>
 
 ## 简介
 
@@ -206,6 +214,15 @@ npm run start
 - Express
 - Mongoose
 - JWT
+
+## 待开发计划
+
+- 增加排课统计性结果
+- 教室管理及考虑教室排课策略
+- 优化排课算法，增加参数
+- 增加多位教师负责同一课程的排课策略
+- 增加年级管理
+- 增加移动端课表查看、分享
 
 ## 贡献
 

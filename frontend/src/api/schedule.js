@@ -156,3 +156,12 @@ export function updateScheduleTime(data) {
     data,
   });
 }
+
+// 获取课表统计数据
+export function getScheduleStatistics(params) {
+  return request({
+    url: "/api/schedule2/statistics",
+    method: "get",
+    params,
+  });
+}

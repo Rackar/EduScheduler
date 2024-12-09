@@ -2,7 +2,7 @@
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
       <div class="text-center">
-        <h2 class="text-3xl font-bold text-gray-900">排课系统</h2>
+        <h2 class="text-3xl font-bold text-gray-900">EduS排课系统</h2>
         <p class="mt-2 text-sm text-gray-600">请登录您的账号</p>
       </div>
 

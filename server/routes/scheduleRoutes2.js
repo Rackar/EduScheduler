@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const scheduleController = require("../controllers/scheduleController2");
-const { protect, schoolAdmin } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 // 所有路由都需要登录
 router.use(protect);
 
 // 生成课表 - 仅管理员
-router.post("/generate", schoolAdmin, scheduleController.generateSchedule);
+router.post("/generate", scheduleController.generateSchedule);
 
 // 获取班级某周的排课结果
 router.get("/class", scheduleController.getScheduleByClassAndWeek);
@@ -26,5 +26,8 @@ router.post("/check-conflicts", scheduleController.checkScheduleConflicts);
 
 // 更新课程时间
 router.put("/update-time", scheduleController.updateScheduleTime);
+
+// 获取统计数据
+router.get("/statistics", scheduleController.getStatistics);
 
 module.exports = router;

@@ -14,7 +14,8 @@
 
       <!-- 视图模式切换 -->
       <div class="mb-4">
-        <el-tabs v-model="currentViewMode"><el-tab-pane label="教师课程视图" name="teacher">
+        <el-tabs v-model="currentViewMode">
+          <el-tab-pane label="教师课程视图" name="teacher">
             <TeacherScheduleView v-if="currentViewMode === 'teacher'" :current-template="currentTemplate" />
           </el-tab-pane>
           <el-tab-pane label="班级课程视图" name="class">
@@ -22,6 +23,9 @@
           </el-tab-pane>
           <el-tab-pane label="逐周视图" name="weekly">
             <WeeklyScheduleView v-if="currentViewMode === 'weekly'" :current-template="currentTemplate" />
+          </el-tab-pane>
+          <el-tab-pane label="统计分析" name="statistics">
+            <ScheduleStatistics v-if="currentViewMode === 'statistics'" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -55,12 +59,14 @@ import { getCurrentTemplate } from "@/api/schedule"
 import WeeklyScheduleView from "@/components/schedule/WeeklyScheduleView.vue"
 import ClassScheduleView from "@/components/schedule/ClassScheduleView.vue"
 import TeacherScheduleView from "@/components/schedule/TeacherScheduleView.vue"
+import ScheduleStatistics from "@/components/schedule/ScheduleStatistics.vue"
 
-// 视���模式
+// 视图模式
 const VIEW_MODES = {
   WEEKLY: "weekly",     // 逐周视图
   CLASS_FULL: "class",  // 班级全课程视图
-  TEACHER_FULL: "teacher" // 教师全课程视图
+  TEACHER_FULL: "teacher", // 教师全课程视图
+  STATISTICS: "statistics" // 统计分析视图
 }
 
 const router = useRouter()

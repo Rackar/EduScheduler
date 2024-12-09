@@ -1,7 +1,7 @@
 <template>
   <el-container class="h-screen">
     <el-aside width="200px" class="bg-gray-800">
-      <div class="p-4 text-white text-xl font-bold">排课系统</div>
+      <div class="p-4 text-white text-xl font-bold">EduS排课系统</div>
       <el-menu class="border-none" background-color="#1F2937" text-color="#fff" active-text-color="#409EFF"
         :router="true" :default-active="route.path">
         <el-menu-item index="/admin/teachers">
