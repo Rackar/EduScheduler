@@ -652,7 +652,7 @@ class ScheduleController2 {
       const schedules = await Schedule2.find({
         tenant,
         school,
-        // 暂时注��掉status条件，看看是否有数据
+        // 暂时注��status条件，看看是否有数据
         // status: { $ne: "archived" }
       })
         .populate({
@@ -795,52 +795,7 @@ class ScheduleController2 {
         stats.weeklyHours = +(
           stats.totalHours / (stats.weekCount || 1)
         ).toFixed(1);
-        courseStats.push({
-          courseName: stats.courseName,
-          totalHours: stats.totalHours,
-          weeklyHours: stats.weeklyHours,
-        });
       });
-
-      // 4. 课时分布统计
-      const hoursDistribution = {
-        classes: Array(5).fill(0),
-        teachers: Array(5).fill(0),
-        courses: Array(5).fill(0),
-      };
-
-      // 统计班级课时分布
-      classStats.forEach((stat) => {
-        const index = Math.min(Math.floor(stat.weeklyHours / 10), 4);
-        hoursDistribution.classes[index]++;
-      });
-
-      // 统计教师课时分布
-      teacherStats.forEach((stat) => {
-        const index = Math.min(Math.floor(stat.weeklyHours / 10), 4);
-        hoursDistribution.teachers[index]++;
-      });
-
-      // 统计课程课时分布
-      courseStats.forEach((stat) => {
-        const index = Math.min(Math.floor(stat.weeklyHours / 10), 4);
-        hoursDistribution.courses[index]++;
-      });
-
-      // 5. 课程类型分布
-      const courseTypeMap = new Map();
-      schedules.forEach((schedule) => {
-        if (!schedule.courseId) return;
-        const type = schedule.courseId.type || "未分类";
-        courseTypeMap.set(type, (courseTypeMap.get(type) || 0) + 1);
-      });
-
-      const courseTypeDistribution = Array.from(courseTypeMap.entries()).map(
-        ([name, value]) => ({
-          name,
-          value,
-        })
-      );
 
       // 4. 每日课程和教师统计
       const dailyDistribution = {
@@ -870,25 +825,44 @@ class ScheduleController2 {
         dailyDistribution.teachers[index] = teachers.size;
       });
 
+      // 5. 班级课程数量统计
+      const classLessonsMap = new Map();
+
+      schedules.forEach((schedule) => {
+        if (!schedule.classId || !schedule.classId._id) return;
+
+        const classId = schedule.classId._id.toString();
+        const className = schedule.classId.name || "未知班级";
+
+        if (!classLessonsMap.has(classId)) {
+          classLessonsMap.set(classId, {
+            name: className,
+            value: 0,
+          });
+        }
+
+        classLessonsMap.get(classId).value++;
+      });
+
+      const classLessonsDistribution = Array.from(
+        classLessonsMap.values()
+      ).sort((a, b) => a.name.localeCompare(b.name)); // 按班级名称排序
+
       // 添加调试日志
       console.log("统计结果:", {
         scheduleCount: schedules.length,
         classStatsCount: classStats.length,
         teacherStatsCount: teacherStats.length,
-        courseStatsCount: courseStats.length,
-        courseTypeCount: courseTypeDistribution.length,
-        classMapSize: classMap.size,
-        teacherMapSize: teacherMap.size,
-        courseMapSize: courseMap.size,
+        classLessonsCount: classLessonsDistribution.length,
+        dailyDistribution,
       });
 
       res.json({
         classStats,
         teacherStats,
         courseStats,
-        hoursDistribution,
-        courseTypeDistribution,
-        dailyDistribution, // 添加每日分布数据
+        dailyDistribution,
+        classLessonsDistribution,
       });
     } catch (error) {
       console.error("获取统计数据失败:", error);

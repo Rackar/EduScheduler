@@ -1,7 +1,7 @@
 <template>
   <div class="container mx-auto p-4">
     <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold">作息时间模板管理</h1>
+
       <div class="space-x-2">
         <el-button type="primary" @click="router.push('/admin/schedule-templates/new')">新增模板</el-button>
         <el-button type="success" @click="router.push('/admin/schedule-templates/import')">导入模板</el-button>

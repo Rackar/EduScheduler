@@ -7,10 +7,7 @@
 
     <!-- 主要内容 -->
     <template v-else>
-      <!-- 顶部操作栏 -->
-      <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">课表查询</h1>
-      </div>
+
 
       <!-- 视图模式切换 -->
       <div class="mb-4">
