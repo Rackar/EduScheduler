@@ -43,9 +43,9 @@
 
 [《EduS 基本教程》](docs/guide.md)
 
-基本功能演示视频：
-<video width="640" height="480" controls>
+[基本功能演示视频](https://edus.codingyang.com/docs/edus_demo1.mp4)
 
+<video width="640" height="480" controls>
 <source src="https://edus.codingyang.com/docs/edus_demo1.mp4" type="video/mp4">
 </video>
 
