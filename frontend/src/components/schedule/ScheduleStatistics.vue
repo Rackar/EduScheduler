@@ -158,9 +158,17 @@ const initCharts = () => {
   })
 
   // 监听窗口大小变化
-  window.addEventListener("resize", () => {
+  const handleResize = () => {
     hoursChart?.resize()
     typeChart?.resize()
+  }
+  window.addEventListener("resize", handleResize)
+
+  // 将 handleResize 函数保存到组件实例上，以便在卸载时移除
+  onUnmounted(() => {
+    window.removeEventListener("resize", handleResize)
+    hoursChart?.dispose()
+    typeChart?.dispose()
   })
 }
 
@@ -201,13 +209,6 @@ const loadStatistics = async () => {
 onMounted(() => {
   initCharts()
   loadStatistics()
-})
-
-// 组件卸载时清理图表实例
-onUnmounted(() => {
-  hoursChart?.dispose()
-  typeChart?.dispose()
-  window.removeEventListener("resize")
 })
 </script>
 

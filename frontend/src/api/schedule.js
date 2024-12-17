@@ -165,3 +165,12 @@ export function getScheduleStatistics(params) {
     params,
   });
 }
+
+// 优化课表分布
+export function optimizeSchedule(options) {
+  return request({
+    url: "/api/schedule2/optimize",
+    method: "post",
+    data: { options },
+  });
+}

@@ -1,6 +1,6 @@
 require("./initDotenv");
 const mongoose = require("mongoose");
-const Schedule = require("../models/Schedule");
+const Schedule = require("../models/Schedule2");
 
 const clearSchedule = async () => {
   try {

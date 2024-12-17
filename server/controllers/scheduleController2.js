@@ -5,6 +5,7 @@ const ScheduleTemplate = require("../models/ScheduleTemplate");
 const Algorithm2 = require("../utils/Algorithm2");
 const { catchAsync } = require("../utils/errors");
 const User = require("../models/User");
+const ScheduleOptimizer = require("../utils/ScheduleOptimizer");
 
 class ScheduleController2 {
   /**
@@ -35,7 +36,7 @@ class ScheduleController2 {
       });
     }
 
-    // 2. 获取所有班级
+    // 2. 获��所有班级
     const classes = await Class.find({
       school,
       status: "active",
@@ -511,7 +512,7 @@ class ScheduleController2 {
         );
       }
 
-      // 2. 检查班级时间冲突
+      // 2. 检查班级时间冲���
       const classConflicts = await Schedule2.find({
         school,
         tenant,
@@ -652,7 +653,7 @@ class ScheduleController2 {
       const schedules = await Schedule2.find({
         tenant,
         school,
-        // 暂时注��status条件，看看是否有数据
+        // 暂时注status条件，看看是否有数据
         // status: { $ne: "archived" }
       })
         .populate({
@@ -868,6 +869,100 @@ class ScheduleController2 {
       console.error("获取统计数据失败:", error);
       res.status(500).json({
         message: "获取统计数据失败",
+        error: error.message,
+      });
+    }
+  };
+
+  // 优化课表分布
+  optimizeSchedule = async (req, res) => {
+    try {
+      const { tenant, school } = req.user;
+      const { options } = req.body;
+
+      // 获取当前课表
+      const schedules = await Schedule2.find({
+        tenant,
+        school,
+        status: { $ne: "archived" },
+      })
+        .populate("courseId")
+        .populate("classId")
+        .populate("teacherId")
+        .lean();
+
+      // 检查是否有课表数据
+      if (!schedules || schedules.length === 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "没有找到可优化的课表数据",
+        });
+      }
+
+      // 检查数据完整性
+      const validSchedules = schedules.filter((schedule) => {
+        const isValid =
+          schedule.courseId && schedule.classId && schedule.teacherId;
+        if (!isValid) {
+          console.warn("发现无效课程数据:", {
+            id: schedule._id,
+            courseId: schedule.courseId,
+            classId: schedule.classId,
+            teacherId: schedule.teacherId,
+          });
+        }
+        return isValid;
+      });
+
+      if (validSchedules.length === 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "所有课程数据都不完整，无法进行优化",
+        });
+      }
+
+      // 创建优化器实例
+      const optimizer = new ScheduleOptimizer(validSchedules, options);
+
+      // 执行优化
+      const result = optimizer.optimize();
+
+      // 如果优化成功且有改进，更新数据库
+      if (result.success && result.improvements > 0) {
+        // 批量更新课程的 dayOfWeek
+        const updatePromises = result.schedules.map((schedule) =>
+          Schedule2.updateOne(
+            { _id: schedule._id },
+            { $set: { dayOfWeek: schedule.dayOfWeek } }
+          )
+        );
+        await Promise.all(updatePromises);
+
+        return res.json({
+          status: "success",
+          message: "课表优化完成",
+          result: {
+            ...result,
+            totalSchedules: validSchedules.length,
+            invalidSchedules: schedules.length - validSchedules.length,
+          },
+        });
+      } else {
+        return res.json({
+          status: "success",
+          message: "当前课表分布已经很均衡，无需调整",
+          result: {
+            improvements: 0,
+            totalSchedules: validSchedules.length,
+            invalidSchedules: schedules.length - validSchedules.length,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("优化课表失败:", error);
+      res.status(500).json({
+        status: "error",
+        message: "优化课表失败",
         error: error.message,
       });
     }

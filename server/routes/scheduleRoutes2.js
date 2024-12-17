@@ -30,4 +30,7 @@ router.put("/update-time", scheduleController.updateScheduleTime);
 // 获取统计数据
 router.get("/statistics", scheduleController.getStatistics);
 
+// 优化课表分布
+router.post("/optimize", scheduleController.optimizeSchedule);
+
 module.exports = router;
