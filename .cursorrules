@@ -23,6 +23,7 @@
       - 使用中文注释
       - 每行结尾去除分号
       - 在修改代码时一般不删注释，如果功能不变，则不修改和删除注释。
+      - 处理中文和中文注释时，小心出现乱码"�",只要出现就转换编码，返回中文字符。
 
       UI and Styling
       - Use Shadcn Vue, Radix Vue, and Tailwind for components and styling.

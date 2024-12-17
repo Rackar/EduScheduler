@@ -7,12 +7,6 @@
         <el-select v-model="currentClass" placeholder="选择班级" @change="handleClassChange">
           <el-option v-for="cls in classes" :key="cls.id || cls._id" :label="cls.name" :value="cls.id || cls._id" />
         </el-select>
-        
-        <!-- 添加优化按钮 -->
-        <el-button type="primary" :loading="optimizing" @click="handleOptimize">
-          <el-icon><Refresh /></el-icon>
-          优化课程分布
-        </el-button>
       </div>
 
       <!-- 课表 -->
@@ -85,15 +79,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue"
-import { ElMessage } from "element-plus"
-import { Refresh } from "@element-plus/icons-vue"
+import { ElMessage, ElMessageBox } from "element-plus"
+import { Refresh, Delete } from "@element-plus/icons-vue"
 import { getClassList } from "@/api/class"
 import {
   getClassScheduleFull,
   checkScheduleConflicts,
   updateScheduleTime,
   getTeacherScheduleFull,
-  optimizeSchedule
+  optimizeSchedule,
+  clearSchedule
 } from "@/api/schedule"
 import { getCellClass, convertToTableData, formatWeeks, mergeScheduleWeeks } from "@/utils/schedule"
 
@@ -114,9 +109,6 @@ const dragTarget = ref(null)
 const conflictList = ref([])
 const targetSchedule = ref(null)
 const hasConflict = ref(false)
-
-// 优化状态
-const optimizing = ref(false)
 
 // 计算课表数据
 const scheduleTableData = computed(() => {
@@ -501,36 +493,15 @@ const checkTeacherOtherClassConflicts = async (teacherId, targetTimeSlot, target
   }
 }
 
-// 优化课程分布
-const handleOptimize = async () => {
-  try {
-    optimizing.value = true
-    
-    // 调用优化API
-    const { data } = await optimizeSchedule({
-      maxIterations: 1000,
-      targetBalance: 0.1,
-      weightDayBalance: 0.4,
-      weightTeacherBalance: 0.3,
-      weightPeriodBalance: 0.3,
-      maxDailyLessons: 8,
-      maxConsecutive: 2
-    })
-    
-    if (data.result?.improvements > 0) {
-      ElMessage.success(`优化完成，共调整 ${data.result.improvements} 处课程`)
-      // 刷新课表数据
-      await fetchSchedules()
-    } else {
-      ElMessage.info("当前课表分布已经很均衡，无需调整")
-    }
-  } catch (error) {
-    console.error("优化课程分布失败:", error)
-    ElMessage.error("优化课程分布失败")
-  } finally {
-    optimizing.value = false
-  }
+// 提供刷新方法给父组件调用
+const refreshSchedules = async () => {
+  await fetchSchedules()
 }
+
+// 暴露方法给父组件
+defineExpose({
+  refreshSchedules
+})
 
 // 页面加载时初始化数据
 onMounted(() => {

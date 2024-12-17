@@ -174,3 +174,11 @@ export function optimizeSchedule(options) {
     data: { options },
   });
 }
+
+// 清除排课
+export const clearSchedule = () => {
+  return request({
+    url: "/api/schedule2/clear",
+    method: "post",
+  });
+};

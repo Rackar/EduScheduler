@@ -33,4 +33,7 @@ router.get("/statistics", scheduleController.getStatistics);
 // 优化课表分布
 router.post("/optimize", scheduleController.optimizeSchedule);
 
+// 清除排课
+router.post("/clear", protect, scheduleController.clearSchedule);
+
 module.exports = router;

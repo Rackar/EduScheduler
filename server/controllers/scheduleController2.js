@@ -36,7 +36,7 @@ class ScheduleController2 {
       });
     }
 
-    // 2. 获��所有班级
+    // 2. 获所有班级
     const classes = await Class.find({
       school,
       status: "active",
@@ -512,7 +512,7 @@ class ScheduleController2 {
         );
       }
 
-      // 2. 检查班级时间冲���
+      // 2. 检查班级时间冲突
       const classConflicts = await Schedule2.find({
         school,
         tenant,
@@ -963,6 +963,28 @@ class ScheduleController2 {
       res.status(500).json({
         status: "error",
         message: "优化课表失败",
+        error: error.message,
+      });
+    }
+  };
+
+  // 清除排课结果
+  clearSchedule = async (req, res) => {
+    try {
+      // 删除当前租户和学校的所有排课记录
+      const result = await Schedule2.deleteMany({
+        tenant: req.user.tenant,
+        school: req.user.school,
+      });
+
+      res.json({
+        message: "清除排课成功",
+        deletedCount: result.deletedCount,
+      });
+    } catch (error) {
+      console.error("清除排课失败:", error);
+      res.status(500).json({
+        message: "清除排课失败",
         error: error.message,
       });
     }

@@ -83,7 +83,7 @@ class SchedulingAlgorithm {
       const weeklyHours = course.hours;
       const processedHours = this.processWeeklyHours(weeklyHours);
 
-      // 存储处理后的每周课时数
+      // 存储处理后的每
       course.processedHours = processedHours;
 
       console.log(`课程 ${course.name} 处理结果:`, {
@@ -99,11 +99,21 @@ class SchedulingAlgorithm {
    * @returns {Object} 处理后的课时安排
    */
   processWeeklyHours(hours) {
+    // 如果是1个学时，特殊处理
+    if (hours === 1) {
+      return {
+        periodsPerWeek: 1,
+        isAlternate: false,
+        isSinglePeriod: true, // 标记为单节课
+      };
+    }
+
     // 如果不允许单双周,向上取整
     if (!this.options.allowAlternateWeeks) {
       return {
         periodsPerWeek: Math.ceil(hours / 2), // 每周课时数(向上取整)
         isAlternate: false,
+        isSinglePeriod: false,
       };
     }
 
@@ -113,6 +123,7 @@ class SchedulingAlgorithm {
         evenWeek: Math.floor(hours / 2), // 双周课时
         oddWeek: Math.ceil(hours / 2), // 单周课时
         isAlternate: true,
+        isSinglePeriod: false,
       };
     }
 
@@ -120,6 +131,7 @@ class SchedulingAlgorithm {
     return {
       periodsPerWeek: Math.ceil(hours / 2),
       isAlternate: false,
+      isSinglePeriod: false,
     };
   }
 
@@ -183,7 +195,7 @@ class SchedulingAlgorithm {
 
     // 遍历每一天
     days.forEach((day) => {
-      // 上午时间段
+      // 上午间段
       this.scheduleTemplate.periods.morning?.forEach((period) => {
         slots.push({
           day,
@@ -252,12 +264,39 @@ class SchedulingAlgorithm {
 
   /**
    * 检查两个周次数组是否有重叠
-   * @param {number[]} weeks1
-   * @param {number[]} weeks2
-   * @returns {boolean}
+   * @param {Array} weeks1 - 第一个周次数组
+   * @param {Array} weeks2 - 第二个周次数组
+   * @returns {boolean} 是否有重叠
    */
   hasWeekOverlap(weeks1, weeks2) {
-    return weeks1.some((week) => weeks2.includes(week));
+    if (!Array.isArray(weeks1) || !Array.isArray(weeks2)) {
+      console.warn("周次数据无效:", { weeks1, weeks2 });
+      return false;
+    }
+
+    // 如果任一数组为空，视为无重叠
+    if (weeks1.length === 0 || weeks2.length === 0) {
+      return false;
+    }
+
+    // 处理周次范围
+    const expandWeeks = (weeks) => {
+      if (weeks.length === 2 && weeks[0] < weeks[1]) {
+        // 如果是范围格式 [start, end]
+        const expanded = [];
+        for (let i = weeks[0]; i <= weeks[1]; i++) {
+          expanded.push(i);
+        }
+        return expanded;
+      }
+      return weeks;
+    };
+
+    const expandedWeeks1 = expandWeeks(weeks1);
+    const expandedWeeks2 = expandWeeks(weeks2);
+
+    // 检查是否有任何重叠的周次
+    return expandedWeeks1.some((week) => expandedWeeks2.includes(week));
   }
 
   /**
@@ -267,6 +306,11 @@ class SchedulingAlgorithm {
    * @returns {number[]}
    */
   getCourseWeeks(course, slotIndex = 0) {
+    // 如果是单节课，只返回最后一周
+    if (course.processedHours?.isSinglePeriod) {
+      return [course.weeks.end];
+    }
+
     const weeks = [];
     const { start, end } = course.weeks;
 
@@ -312,7 +356,101 @@ class SchedulingAlgorithm {
       this.scheduleCourse(course);
     });
 
+    // 后处理优化：合并单双周课程
+    this.optimizeAlternateWeeks();
+
     return this.scheduleResults;
+  }
+
+  /**
+   * 后处理优化：合并单双周课程到同一天
+   * 遍历所有课程，尝试将单双周课程合并到同一天的同一���间段
+   */
+  optimizeAlternateWeeks() {
+    // 按课程ID分组
+    const courseGroups = new Map();
+    this.scheduleResults.forEach((schedule) => {
+      if (!courseGroups.has(schedule.courseId)) {
+        courseGroups.set(schedule.courseId, []);
+      }
+      courseGroups.get(schedule.courseId).push(schedule);
+    });
+
+    // 遍历每个课程组
+    courseGroups.forEach((schedules, courseId) => {
+      if (schedules.length <= 1) return;
+
+      // 找到可能的单双周课程
+      const oddWeekSchedules = schedules.filter((s) =>
+        s.weeks.every((w) => w % 2 === 1)
+      );
+      const evenWeekSchedules = schedules.filter((s) =>
+        s.weeks.every((w) => w % 2 === 0)
+      );
+
+      // 如果存在单双周课程
+      if (oddWeekSchedules.length > 0 && evenWeekSchedules.length > 0) {
+        oddWeekSchedules.forEach((oddSchedule) => {
+          // 尝试为每个单周课程找到合适的双周课程进行合并
+          const suitableEvenSchedule = this.findSuitableScheduleForMerge(
+            oddSchedule,
+            evenWeekSchedules
+          );
+
+          if (suitableEvenSchedule) {
+            // 将双周课程移动到单周课程的时间槽
+            const newSchedule = {
+              ...suitableEvenSchedule,
+              timeSlot: oddSchedule.timeSlot,
+              timeSlotId: oddSchedule.timeSlotId,
+              dayOfWeek: oddSchedule.dayOfWeek,
+            };
+
+            // 检查移动后是否会产生冲突
+            if (!this.checkConflict(newSchedule)) {
+              // 更新课程安排
+              const index = this.scheduleResults.findIndex(
+                (s) => s === suitableEvenSchedule
+              );
+              if (index !== -1) {
+                this.scheduleResults[index] = newSchedule;
+              }
+            }
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * 为给定的课程安排找到合适的配对进行合并
+   * @param {ScheduleResult} schedule - 待配对的课程安排
+   * @param {ScheduleResult[]} candidates - 候选课程安排
+   * @returns {ScheduleResult|null} 合适的配对课程，如果没有则返回null
+   */
+  findSuitableScheduleForMerge(schedule, candidates) {
+    // 检查每个候选课程
+    for (const candidate of candidates) {
+      // 必须是同一个班级
+      if (candidate.classId !== schedule.classId) continue;
+
+      // 必须是同一个教师
+      if (candidate.teacherId !== schedule.teacherId) continue;
+
+      // 检查合并后是否会产生时间冲突
+      const tempSchedule = {
+        ...candidate,
+        timeSlot: schedule.timeSlot,
+        timeSlotId: schedule.timeSlotId,
+        dayOfWeek: schedule.dayOfWeek,
+      };
+
+      if (!this.checkConflict(tempSchedule)) {
+        return candidate;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -329,7 +467,7 @@ class SchedulingAlgorithm {
       if (b.classes.length !== a.classes.length) {
         return b.classes.length - a.classes.length;
       }
-      // 3. 最后按周次跨度降序
+      // 3. 最后按周次度降序
       const aSpan = a.weeks.end - a.weeks.start;
       const bSpan = b.weeks.end - b.weeks.start;
       return bSpan - aSpan;
@@ -346,25 +484,36 @@ class SchedulingAlgorithm {
 
     // 为每个班级安排课程
     course.classes.forEach((classId) => {
+      // 如果是单节课，只安排一次
+      if (course.processedHours?.isSinglePeriod) {
+        const availableSlots = this.getAvailableSlots(course, classId, 1);
+        if (availableSlots.length > 0) {
+          this.scheduleResults.push({
+            courseId: course._id.toString(),
+            classId: classId.toString(),
+            teacherId: course.teacher._id.toString(),
+            timeSlot: availableSlots[0],
+            timeSlotId: availableSlots[0].id,
+            dayOfWeek: availableSlots[0].day,
+            courseName: course.name,
+            weeks: this.getCourseWeeks(course),
+          });
+        }
+        return;
+      }
+
       if (course.processedHours?.isAlternate) {
-        // 单双周排课
-        // 1. 单周课时(多)
+        // 先安排单周课程
         const oddWeekSlots = this.getAvailableSlots(
           course,
           classId,
           course.processedHours.oddWeek
         );
 
-        // 2. 双周课时(少)
-        const evenWeekSlots = this.getAvailableSlots(
-          course,
-          classId,
-          course.processedHours.evenWeek
-        );
-
-        // 安排单周课程
-        oddWeekSlots.forEach((slot, index) => {
-          this.scheduleResults.push({
+        // 记录单周课程的时间槽
+        const oddWeekSchedules = [];
+        oddWeekSlots.forEach((slot) => {
+          const schedule = {
             courseId: course._id.toString(),
             classId: classId.toString(),
             teacherId: course.teacher._id.toString(),
@@ -373,22 +522,53 @@ class SchedulingAlgorithm {
             dayOfWeek: slot.day,
             courseName: course.name,
             weeks: this.getCourseWeeks(course, 0), // 单周
-          });
+          };
+          this.scheduleResults.push(schedule);
+          oddWeekSchedules.push(schedule);
         });
 
-        // 安排双周课程
-        evenWeekSlots.forEach((slot, index) => {
-          this.scheduleResults.push({
-            courseId: course._id.toString(),
-            classId: classId.toString(),
-            teacherId: course.teacher._id.toString(),
-            timeSlot: slot,
-            timeSlotId: slot.id,
-            dayOfWeek: slot.day,
-            courseName: course.name,
-            weeks: this.getCourseWeeks(course, 1), // 双周
+        // 尝试在单周课程的时间安排双周课程
+        const evenWeekSlots = oddWeekSchedules.map(
+          (schedule) => schedule.timeSlot
+        );
+        if (evenWeekSlots.length >= course.processedHours.evenWeek) {
+          // 可以复用时间槽
+          evenWeekSlots
+            .slice(0, course.processedHours.evenWeek)
+            .forEach((slot) => {
+              this.scheduleResults.push({
+                courseId: course._id.toString(),
+                classId: classId.toString(),
+                teacherId: course.teacher._id.toString(),
+                timeSlot: slot,
+                timeSlotId: slot.id,
+                dayOfWeek: slot.day,
+                courseName: course.name,
+                weeks: this.getCourseWeeks(course, 1), // 双周
+              });
+            });
+        } else {
+          // 需要寻找新的时间槽，优先考虑已有课程的时间段
+          const additionalSlots = this.getAvailableSlots(
+            course,
+            classId,
+            course.processedHours.evenWeek - evenWeekSlots.length,
+            oddWeekSchedules
+          );
+
+          additionalSlots.forEach((slot) => {
+            this.scheduleResults.push({
+              courseId: course._id.toString(),
+              classId: classId.toString(),
+              teacherId: course.teacher._id.toString(),
+              timeSlot: slot,
+              timeSlotId: slot.id,
+              dayOfWeek: slot.day,
+              courseName: course.name,
+              weeks: this.getCourseWeeks(course, 1), // 双周
+            });
           });
-        });
+        }
       } else {
         // 常规排课(每周相同)
         const lessonsPerWeek = weeklyHours / 2;
@@ -419,14 +599,24 @@ class SchedulingAlgorithm {
    * @param {Object} course
    * @param {Object} classId
    * @param {number} count
+   * @param {Array} existingSchedules - 已有的课程安排
    * @returns {TimeSlot[]}
    */
-  getAvailableSlots(course, classId, count) {
+  getAvailableSlots(course, classId, count, existingSchedules = []) {
     const availableSlots = [];
     const weeks = this.getCourseWeeks(course);
 
+    // 先检查已有课程的时间槽
+    const existingDays = new Set();
+    existingSchedules?.forEach((schedule) => {
+      existingDays.add(schedule.timeSlot.day);
+    });
+
     // 遍历所有时间槽
     for (const slot of this.timeSlots) {
+      // 如果是已有课程的时间槽，优先考虑
+      const isExistingDay = existingDays.has(slot.day);
+
       // 创建临时排课结果用于冲突检查
       const tempSchedule = {
         courseId: course._id.toString(),
@@ -441,9 +631,14 @@ class SchedulingAlgorithm {
       // 如果没有冲突且符合课程分布要求
       if (
         !this.checkConflict(tempSchedule) &&
-        this.checkDistribution(availableSlots, slot)
+        this.checkDistribution(availableSlots, slot, existingSchedules)
       ) {
-        availableSlots.push(slot);
+        // 如果是已有课程的时间槽，插入到数组前面
+        if (isExistingDay) {
+          availableSlots.unshift(slot);
+        } else {
+          availableSlots.push(slot);
+        }
 
         // 如果已经找到足够的时间槽
         if (availableSlots.length === count) {
@@ -459,13 +654,162 @@ class SchedulingAlgorithm {
    * 检查课程分布是否合理
    * @param {TimeSlot[]} existingSlots
    * @param {TimeSlot} newSlot
+   * @param {Array} existingSchedules - 已有的课程安排
    * @returns {boolean}
    */
-  checkDistribution(existingSlots, newSlot) {
-    // 检查是否存在相邻天数的课程
-    return !existingSlots.some(
+  checkDistribution(existingSlots, newSlot, existingSchedules = []) {
+    // 检查相邻天数
+    const hasAdjacentDay = existingSlots.some(
       (slot) => Math.abs(Number(slot.day) - Number(newSlot.day)) <= 1
     );
+
+    if (hasAdjacentDay) return false;
+
+    // 检查单双周分布
+    const dayCount = new Map();
+
+    // 统计现有时间槽的每天课程数
+    existingSlots.forEach((slot) => {
+      const day = slot.day;
+      dayCount.set(day, (dayCount.get(day) || 0) + 1);
+    });
+
+    // 统计已有课程安排的每天课程数
+    existingSchedules.forEach((schedule) => {
+      const day = schedule.timeSlot.day;
+      dayCount.set(day, (dayCount.get(day) || 0) + 1);
+    });
+
+    // 如果某天已有��程，不允许再安排
+    if (dayCount.get(newSlot.day)) return false;
+
+    // 检查是否超过每天最大课程数
+    const currentDayCount = dayCount.get(newSlot.day) || 0;
+    if (currentDayCount >= this.options.maxCoursesPerDay) return false;
+
+    return true;
+  }
+
+  checkConflicts(schedule, targetDay, timeSlot) {
+    const targetDaySchedules = this.dailySchedules[targetDay];
+
+    // 添加调试日志
+    console.log("检查冲突:", {
+      schedule: {
+        id: schedule._id,
+        teacherId: schedule.teacherId,
+        classId: schedule.classId,
+        timeSlotId: schedule.timeSlotId,
+        weeks: schedule.weeks,
+      },
+      targetDay,
+      timeSlot,
+      targetDaySchedulesCount: targetDaySchedules.length,
+    });
+
+    // 检查教师冲突
+    if (schedule.teacherId) {
+      const teacherConflict = targetDaySchedules.some((s) => {
+        const isConflict =
+          s.teacherId &&
+          s.teacherId.toString() === schedule.teacherId.toString() &&
+          s.timeSlotId === schedule.timeSlotId &&
+          s._id !== schedule._id && // 排除自身
+          this.hasWeekOverlap(s.weeks, schedule.weeks); // 添加周次重叠检查
+
+        if (isConflict) {
+          console.log("发现教师冲突:", {
+            sourceTeacher: schedule.teacherId.toString(),
+            targetTeacher: s.teacherId.toString(),
+            sourceTimeSlot: schedule.timeSlotId,
+            targetTimeSlot: s.timeSlotId,
+            sourceWeeks: schedule.weeks,
+            targetWeeks: s.weeks,
+          });
+        }
+        return isConflict;
+      });
+      if (teacherConflict) return true;
+    }
+
+    // 检查班级冲突
+    if (schedule.classId) {
+      const classConflict = targetDaySchedules.some((s) => {
+        const isConflict =
+          s.classId &&
+          s.classId.toString() === schedule.classId.toString() &&
+          s.timeSlotId === schedule.timeSlotId &&
+          s._id !== schedule._id && // 排除自身
+          this.hasWeekOverlap(s.weeks, schedule.weeks); // 添加周次重叠检查
+
+        if (isConflict) {
+          console.log("发现班级冲突:", {
+            sourceClass: schedule.classId.toString(),
+            targetClass: s.classId.toString(),
+            sourceTimeSlot: schedule.timeSlotId,
+            targetTimeSlot: s.timeSlotId,
+            sourceWeeks: schedule.weeks,
+            targetWeeks: s.weeks,
+          });
+        }
+        return isConflict;
+      });
+      if (classConflict) return true;
+    }
+
+    // 检查班级每日课程数限制
+    if (schedule.classId) {
+      const classScheduleCount = targetDaySchedules.filter(
+        (s) =>
+          s.classId &&
+          s.classId._id.toString() === schedule.classId._id.toString()
+      ).length;
+
+      if (classScheduleCount >= this.options.maxDailyLessons) {
+        console.log("超出班级每日课程数限制:", {
+          classId: schedule.classId.toString(),
+          current: classScheduleCount,
+          max: this.options.maxDailyLessons,
+        });
+        return true;
+      }
+    }
+
+    // 检查连续课程限制
+    if (schedule.teacherId) {
+      const consecutiveCount = targetDaySchedules.filter((s) => {
+        const isConsecutive =
+          s.teacherId &&
+          s.teacherId.toString() === schedule.teacherId.toString() &&
+          Math.abs(parseInt(s.timeSlotId) - parseInt(schedule.timeSlotId)) ===
+            1 &&
+          s._id !== schedule._id && // 排除自身
+          this.hasWeekOverlap(s.weeks, schedule.weeks); // 添加周次重叠检查
+
+        if (isConsecutive) {
+          console.log("发现连续课程:", {
+            sourceTimeSlot: schedule.timeSlotId,
+            targetTimeSlot: s.timeSlotId,
+            difference: Math.abs(
+              parseInt(s.timeSlotId) - parseInt(schedule.timeSlotId)
+            ),
+            sourceWeeks: schedule.weeks,
+            targetWeeks: s.weeks,
+          });
+        }
+        return isConsecutive;
+      }).length;
+
+      if (consecutiveCount >= this.options.maxConsecutive) {
+        console.log("超出连续课程限制:", {
+          count: consecutiveCount,
+          max: this.options.maxConsecutive,
+        });
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 
