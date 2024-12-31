@@ -1,12 +1,11 @@
 <script setup>
 import { ref } from "vue"
-import { ElMessage } from "element-plus"
+import { ElMessage, ElLoading } from "element-plus"
 import * as XLSX from "xlsx"
 import { batchImportCourses } from "@/api/course"
 
 const emit = defineEmits(["success", "error"])
 const dialogVisible = ref(false)
-const loading = ref(false)
 const uploadRef = ref()
 
 // 处理文件上传
@@ -14,9 +13,9 @@ const handleUpload = async (file) => {
   if (!file) return false
 
   try {
-    loading.value = true
-    const reader = new FileReader()
 
+    const reader = new FileReader()
+    let eloading
     reader.onload = async (e) => {
       try {
         const data = new Uint8Array(e.target.result)
@@ -63,11 +62,16 @@ const handleUpload = async (file) => {
             studentCount: parseInt(row["学生人数"] || row["studentCount"] || "0")
           }
         })
+        eloading = ElLoading.service({
+          lock: true,
+          text: 'Loading',
+          background: 'rgba(0, 0, 0, 0.7)',
+        })
 
         // 发送批量导入请求
         const result = await batchImportCourses({ courses })
         console.log("导入结果:", result)
-
+        eloading.close()
         // 触发成功回调
         emit("success", result.data)
 
@@ -78,6 +82,7 @@ const handleUpload = async (file) => {
       } catch (error) {
         console.error("导入处理失败:", error)
         emit("error", error)
+        eloading.close()
       }
     }
 
@@ -87,7 +92,7 @@ const handleUpload = async (file) => {
     console.error("文件处理失败:", error)
     emit("error", error)
   } finally {
-    loading.value = false
+
   }
 }
 
@@ -103,7 +108,7 @@ defineExpose({
 
 <template>
   <el-dialog v-model="dialogVisible" title="导入课程" width="500px" :close-on-click-modal="false">
-    <el-upload ref="uploadRef" class="upload-demo" action="#" :auto-upload="false" :show-file-list="true"
+    <el-upload ref="uploadRef" class="upload-demo" action="#" :auto-upload="false" :show-file-list="false"
       :on-change="handleUpload" accept=".xlsx,.xls">
       <template #trigger>
         <el-button type="primary">选择文件</el-button>

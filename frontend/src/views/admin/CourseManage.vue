@@ -5,7 +5,10 @@
         <el-input v-model="searchQuery" placeholder="搜索课程..." style="width: 200px" clearable />
       </div>
       <div class="right">
-        <el-button type="primary" @click="openImportDialog">导入课程</el-button>
+        <el-button type="primary" @click="handleDownloadTemplate">下载课程模板</el-button>
+        <el-tooltip content="请先下载模板进行修改后再导入" placement="top">
+          <el-button type="primary" @click="openImportDialog">导入课程</el-button>
+        </el-tooltip>
         <el-button type="danger" @click="handleClearAll">清除全部数据</el-button>
       </div>
     </div>
@@ -180,6 +183,16 @@ const handleClearAll = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 下载导入模板
+const handleDownloadTemplate = () => {
+  const link = document.createElement("a")
+  link.href = "/importDataDemo.xls"
+  link.download = "课程导入模板.xls"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 // 监听查询条件变化
