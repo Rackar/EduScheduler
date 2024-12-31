@@ -21,4 +21,7 @@ router.put("/:id", schoolAdmin, courseController.updateCourse);
 // 删除课程 (需要学校管理员权限)
 router.delete("/:id", schoolAdmin, courseController.deleteCourse);
 
+// 清除所有数据
+router.post("/clear-all", protect, courseController.clearAllData);
+
 module.exports = router;

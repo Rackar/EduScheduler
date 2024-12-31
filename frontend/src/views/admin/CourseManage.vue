@@ -48,7 +48,7 @@
 <script setup>
 import { ref, onMounted, watch } from "vue"
 import { ElMessage, ElMessageBox } from "element-plus"
-import { getCourseList, deleteCourse } from "@/api/course"
+import { getCourseList, deleteCourse, clearAllData } from "@/api/course"
 import ImportCourses from "@/components/ImportCourses.vue"
 
 const loading = ref(false)
@@ -142,6 +142,43 @@ const handleDelete = async (row) => {
     if (error !== "cancel") {
       ElMessage.error("删除失败")
     }
+  }
+}
+
+// 清除所有数据
+const handleClearAll = async () => {
+  try {
+    await ElMessageBox.confirm(
+      "确定要清除所有数据吗？这将删除所有课程、班级、教师和排课数据，此操作不可恢复！",
+      "警告",
+      {
+        confirmButtonText: "确定清除",
+        cancelButtonText: "取消",
+        type: "warning",
+        confirmButtonClass: "el-button--danger"
+      }
+    )
+
+    loading.value = true
+    const { data } = await clearAllData()
+
+    ElMessage.success(`清除成功！共删除：
+      ${data.deletedCount.courses} 个课程、
+      ${data.deletedCount.classes} 个班级、
+      ${data.deletedCount.schedules} 条排课记录、
+      ${data.deletedCount.teachers} 个教师账号
+    `)
+
+    // 重新加载课程列表
+    currentPage.value = 1
+    await loadCourses()
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("清除数据失败:", error)
+      ElMessage.error("清除数据失败")
+    }
+  } finally {
+    loading.value = false
   }
 }
 

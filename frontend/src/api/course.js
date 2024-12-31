@@ -55,3 +55,11 @@ export const batchImportCourses = (data) => {
     ],
   });
 };
+
+// 清除所有数据
+export function clearAllData() {
+  return request({
+    url: "/api/courses/clear-all",
+    method: "post",
+  });
+}

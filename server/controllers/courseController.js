@@ -1,6 +1,7 @@
 const Course = require("../models/Course");
 const User = require("../models/User");
 const Class = require("../models/Class");
+const Schedule2 = require("../models/Schedule2");
 const asyncHandler = require("express-async-handler");
 
 // 获取所有课程
@@ -416,6 +417,42 @@ exports.batchImportCourses = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "批量导入课程失败",
+      error: error.message,
+    });
+  }
+};
+
+// 清除所有数据
+exports.clearAllData = async (req, res) => {
+  try {
+    const { tenant, school } = req.user;
+
+    // 清空所有相关集合
+    const [courseResult, classResult, scheduleResult, teacherResult] =
+      await Promise.all([
+        Course.deleteMany({ tenant, school }),
+        Class.deleteMany({ tenant, school }),
+        Schedule2.deleteMany({ tenant, school }),
+        User.deleteMany({
+          tenant,
+          school,
+          roles: { $in: ["teacher"] },
+        }),
+      ]);
+
+    res.json({
+      message: "清除数据成功",
+      deletedCount: {
+        courses: courseResult.deletedCount,
+        classes: classResult.deletedCount,
+        schedules: scheduleResult.deletedCount,
+        teachers: teacherResult.deletedCount,
+      },
+    });
+  } catch (error) {
+    console.error("清除数据失败:", error);
+    res.status(500).json({
+      message: "清除数据失败",
       error: error.message,
     });
   }
