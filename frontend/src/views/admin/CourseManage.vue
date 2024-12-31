@@ -1,8 +1,13 @@
 <template>
   <div class="course-manage">
     <div class="header">
-      <el-input v-model="searchQuery" placeholder="搜索课程..." style="width: 200px" clearable />
-      <el-button type="primary" @click="openImportDialog">导入课程</el-button>
+      <div class="left">
+        <el-input v-model="searchQuery" placeholder="搜索课程..." style="width: 200px" clearable />
+      </div>
+      <div class="right">
+        <el-button type="primary" @click="openImportDialog">导入课程</el-button>
+        <el-button type="danger" @click="handleClearAll">清除全部数据</el-button>
+      </div>
     </div>
 
     <el-table v-loading="loading" :data="courses" border style="width: 100%; margin-top: 20px">

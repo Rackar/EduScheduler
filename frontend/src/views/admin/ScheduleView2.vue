@@ -11,7 +11,7 @@
 
       <!-- 视图模式切换 -->
       <div class="mb-4">
-        <el-tabs v-model="currentViewMode">
+        <el-tabs v-model="currentViewMode" @tab-click="handleTabClick">
           <el-tab-pane label="教师课程视图" name="teacher">
             <TeacherScheduleView v-if="currentViewMode === 'teacher'" :current-template="currentTemplate" />
           </el-tab-pane>
@@ -22,7 +22,7 @@
             <WeeklyScheduleView v-if="currentViewMode === 'weekly'" :current-template="currentTemplate" />
           </el-tab-pane>
           <el-tab-pane label="统计分析" name="statistics">
-            <ScheduleStatistics v-if="currentViewMode === 'statistics'" />
+            <ScheduleStatistics v-if="currentViewMode === 'statistics'" ref="statisticsRef" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, onMounted, nextTick } from "vue"
 import { useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
 import { getCurrentTemplate } from "@/api/schedule"
@@ -70,6 +70,7 @@ const router = useRouter()
 const loading = ref(false)
 const currentTemplate = ref(null)
 const currentViewMode = ref(VIEW_MODES.TEACHER_FULL)
+const statisticsRef = ref(null)
 
 // 获取当前模板
 const fetchCurrentTemplate = async () => {
@@ -85,7 +86,17 @@ const fetchCurrentTemplate = async () => {
   }
 }
 
-// 页面加载时初始化数据
+// 处理标签页切换
+const handleTabClick = async (tab) => {
+  if (tab.props.name === "statistics") {
+    // 等待下一个 tick，确保组件已经挂载
+    await nextTick()
+    // 刷新统计图表
+    await statisticsRef.value?.refresh()
+  }
+}
+
+// 组件挂载时初始化数据
 onMounted(() => {
   fetchCurrentTemplate()
 })

@@ -23,19 +23,13 @@
       - 使用中文注释
       - 每行结尾去除分号
       - 在修改代码时一般不删注释，如果功能不变，则不修改和删除注释。
-      - 处理中文和中文注释时，小心出现乱码"�",只要出现就转换编码，返回中文字符。
+      - 使用UTF-8的编码，中文注释时，注意不要出现乱码字符"�",只要出现就转换编码，返回中文字符。
 
       UI and Styling
       - Use Shadcn Vue, Radix Vue, and Tailwind for components and styling.
       - Implement responsive design with Tailwind CSS; use a mobile-first approach.
 
-
-      Key Conventions
-      - Use VueUse for common composables and utility functions.
-      - Use Pinia for state management.
-      - Optimize Web Vitals (LCP, CLS, FID).
  
-
       Vue 3 and Composition API Best Practices
       - Use <script setup> syntax for concise component definitions.
       - Leverage ref, reactive, and computed for reactive state management.

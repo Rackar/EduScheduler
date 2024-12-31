@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue"
+import { ref, onMounted, onUnmounted, nextTick } from "vue"
 import * as echarts from "echarts"
 import { getScheduleStatistics } from "@/api/schedule"
 
@@ -62,7 +62,24 @@ let hoursChart = null
 let typeChart = null
 
 // 初始化图表
-const initCharts = () => {
+const initCharts = async () => {
+  // 等待 DOM 更新完成
+  await nextTick()
+
+  // 确保容器已经渲染
+  if (!hoursChartRef.value || !typeChartRef.value) {
+    console.warn("图表容器未准备好")
+    return
+  }
+
+  // 销毁现有图表实例
+  if (hoursChart) {
+    hoursChart.dispose()
+  }
+  if (typeChart) {
+    typeChart.dispose()
+  }
+
   // 每日课程和教师分布图
   hoursChart = echarts.init(hoursChartRef.value)
   hoursChart.setOption({
@@ -158,18 +175,13 @@ const initCharts = () => {
   })
 
   // 监听窗口大小变化
-  const handleResize = () => {
-    hoursChart?.resize()
-    typeChart?.resize()
-  }
   window.addEventListener("resize", handleResize)
+}
 
-  // 将 handleResize 函数保存到组件实例上，以便在卸载时移除
-  onUnmounted(() => {
-    window.removeEventListener("resize", handleResize)
-    hoursChart?.dispose()
-    typeChart?.dispose()
-  })
+// 处理窗口大小变化
+const handleResize = () => {
+  hoursChart?.resize()
+  typeChart?.resize()
 }
 
 // 加载统计数据
@@ -179,6 +191,14 @@ const loadStatistics = async () => {
     const { data } = await getScheduleStatistics()
     classStats.value = data.classStats
     teacherStats.value = data.teacherStats
+
+    // 等待 DOM 更新完成
+    await nextTick()
+
+    // 确保图表实例存在
+    if (!hoursChart || !typeChart) {
+      await initCharts()
+    }
 
     // 更新每日分布图数据
     hoursChart?.setOption({
@@ -206,9 +226,23 @@ const loadStatistics = async () => {
 }
 
 // 组件挂载时加载数据
-onMounted(() => {
-  initCharts()
-  loadStatistics()
+onMounted(async () => {
+  await initCharts()
+  await loadStatistics()
+})
+
+// 组件卸载时清理
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize)
+  hoursChart?.dispose()
+  typeChart?.dispose()
+})
+
+// 暴露刷新方法
+defineExpose({
+  refresh: async () => {
+    await loadStatistics()
+  }
 })
 </script>
 

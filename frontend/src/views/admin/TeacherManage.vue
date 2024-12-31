@@ -170,8 +170,8 @@ const rules = {
     { required: true, message: "请输入手机号", trigger: "blur" },
     { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号格式", trigger: "blur" },
   ],
-  department: [{ required: true, message: "请选择所属院系", trigger: "change" }],
-  title: [{ required: true, message: "请选择职称", trigger: "change" }],
+  department: [{ required: false, message: "请选择所属院系", trigger: "change" }],
+  title: [{ required: false, message: "请选择职称", trigger: "change" }],
 }
 
 // 时间设置数据

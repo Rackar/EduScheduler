@@ -39,7 +39,7 @@
 
 本项目开发过程大量使用了 Cursor 和 Claude 模型，特此感谢。
 
-[演示系统地址](https://www.codingyang.com/edus) 账户密码: admin/admin123
+[演示系统地址](https://edus.codingyang.com/) 账户密码: admin/admin123
 
 [《EduS 基本教程》](docs/guide.md)
 

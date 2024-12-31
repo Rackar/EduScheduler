@@ -36,7 +36,7 @@ class ScheduleController2 {
       });
     }
 
-    // 2. 获所有班级
+    // 2. 获���班级
     const classes = await Class.find({
       school,
       status: "active",
@@ -669,8 +669,8 @@ class ScheduleController2 {
           select: "name",
         })
         .populate({
-          path: "timeSlot",
-          select: "periods",
+          path: "timeSlotId",
+          select: "name startTime endTime creditHours",
         })
         .lean();
 
@@ -681,7 +681,7 @@ class ScheduleController2 {
               courseId: schedules[0].courseId,
               classId: schedules[0].classId,
               teacherId: schedules[0].teacherId,
-              timeSlot: schedules[0].timeSlot,
+              timeSlot: schedules[0].timeSlotId,
             }
           : null,
       });
@@ -691,33 +691,34 @@ class ScheduleController2 {
       const classMap = new Map();
 
       schedules.forEach((schedule) => {
-        if (!schedule.classId || !schedule.classId._id) {
+        if (
+          !schedule.classId ||
+          !schedule.classId._id ||
+          !schedule.timeSlotId
+        ) {
           console.log("发现无效的班级数据:", schedule);
           return;
         }
 
         const classId = schedule.classId._id.toString();
         const weekCount = schedule.weeks ? schedule.weeks.length : 0;
-        const creditHours = 2; // 默认每节课2学时
+        const creditHours = schedule.timeSlotId?.creditHours || 0;
+        const totalHoursForSchedule = creditHours * weekCount;
 
         if (!classMap.has(classId)) {
           classMap.set(classId, {
             className: schedule.classId.name || "未知班级",
             totalHours: 0,
-            weeklyHours: 0,
-            weekCount: 0,
+            weekCount: 20,
           });
         }
 
         const stats = classMap.get(classId);
-        stats.totalHours += creditHours;
-        stats.weekCount = Math.max(stats.weekCount, weekCount);
+        stats.totalHours += totalHoursForSchedule;
       });
 
       classMap.forEach((stats) => {
-        stats.weeklyHours = +(
-          stats.totalHours / (stats.weekCount || 1)
-        ).toFixed(1);
+        stats.weeklyHours = +(stats.totalHours / stats.weekCount).toFixed(1);
         classStats.push({
           className: stats.className,
           totalHours: stats.totalHours,
@@ -730,33 +731,34 @@ class ScheduleController2 {
       const teacherMap = new Map();
 
       schedules.forEach((schedule) => {
-        if (!schedule.teacherId || !schedule.teacherId._id) {
+        if (
+          !schedule.teacherId ||
+          !schedule.teacherId._id ||
+          !schedule.timeSlotId
+        ) {
           console.log("发现无效的教师数据:", schedule);
           return;
         }
 
         const teacherId = schedule.teacherId._id.toString();
         const weekCount = schedule.weeks ? schedule.weeks.length : 0;
-        const creditHours = 2; // 默认每节课2学时
+        const creditHours = schedule.timeSlotId?.creditHours || 0;
+        const totalHoursForSchedule = creditHours * weekCount;
 
         if (!teacherMap.has(teacherId)) {
           teacherMap.set(teacherId, {
             teacherName: schedule.teacherId.name || "未知教师",
             totalHours: 0,
-            weeklyHours: 0,
-            weekCount: 0,
+            weekCount: 20,
           });
         }
 
         const stats = teacherMap.get(teacherId);
-        stats.totalHours += creditHours;
-        stats.weekCount = Math.max(stats.weekCount, weekCount);
+        stats.totalHours += totalHoursForSchedule;
       });
 
       teacherMap.forEach((stats) => {
-        stats.weeklyHours = +(
-          stats.totalHours / (stats.weekCount || 1)
-        ).toFixed(1);
+        stats.weeklyHours = +(stats.totalHours / stats.weekCount).toFixed(1);
         teacherStats.push({
           teacherName: stats.teacherName,
           totalHours: stats.totalHours,
@@ -769,33 +771,39 @@ class ScheduleController2 {
       const courseMap = new Map();
 
       schedules.forEach((schedule) => {
-        if (!schedule.courseId || !schedule.courseId._id) {
+        if (
+          !schedule.courseId ||
+          !schedule.courseId._id ||
+          !schedule.timeSlotId
+        ) {
           console.log("发现无效的课程数据:", schedule);
           return;
         }
 
         const courseId = schedule.courseId._id.toString();
         const weekCount = schedule.weeks ? schedule.weeks.length : 0;
-        const creditHours = 2; // 默认每节课2学时
+        const creditHours = schedule.timeSlotId?.creditHours || 0;
+        const totalHoursForSchedule = creditHours * weekCount;
 
         if (!courseMap.has(courseId)) {
           courseMap.set(courseId, {
             courseName: schedule.courseId.name || "未知课程",
             totalHours: 0,
-            weeklyHours: 0,
-            weekCount: 0,
+            weekCount: 20,
           });
         }
 
         const stats = courseMap.get(courseId);
-        stats.totalHours += creditHours;
-        stats.weekCount = Math.max(stats.weekCount, weekCount);
+        stats.totalHours += totalHoursForSchedule;
       });
 
       courseMap.forEach((stats) => {
-        stats.weeklyHours = +(
-          stats.totalHours / (stats.weekCount || 1)
-        ).toFixed(1);
+        stats.weeklyHours = +(stats.totalHours / stats.weekCount).toFixed(1);
+        courseStats.push({
+          courseName: stats.courseName,
+          totalHours: stats.totalHours,
+          weeklyHours: stats.weeklyHours,
+        });
       });
 
       // 4. 每日课程和教师统计
@@ -830,24 +838,32 @@ class ScheduleController2 {
       const classLessonsMap = new Map();
 
       schedules.forEach((schedule) => {
-        if (!schedule.classId || !schedule.classId._id) return;
+        if (!schedule.classId || !schedule.classId._id || !schedule.courseId)
+          return;
 
         const classId = schedule.classId._id.toString();
         const className = schedule.classId.name || "未知班级";
+        const courseId = schedule.courseId._id.toString();
 
         if (!classLessonsMap.has(classId)) {
           classLessonsMap.set(classId, {
             name: className,
             value: 0,
+            courses: new Set(), // 使用 Set 来存储唯一的课程 ID
           });
         }
 
-        classLessonsMap.get(classId).value++;
+        // 添加课程 ID 到 Set 中
+        classLessonsMap.get(classId).courses.add(courseId);
       });
 
-      const classLessonsDistribution = Array.from(
-        classLessonsMap.values()
-      ).sort((a, b) => a.name.localeCompare(b.name)); // 按班级名称排序
+      // 转换为最终结果，使用 Set 的大小作为课程数量
+      const classLessonsDistribution = Array.from(classLessonsMap.values())
+        .map((item) => ({
+          name: item.name,
+          value: item.courses.size, // 使用 Set 的大小作为课程数量
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)); // 按班级名称排序
 
       // 添加调试日志
       console.log("统计结果:", {
@@ -917,7 +933,7 @@ class ScheduleController2 {
       if (validSchedules.length === 0) {
         return res.status(400).json({
           status: "error",
-          message: "所有课程数据都不完整，无法进行优化",
+          message: "所有程数据都不完整，无法进行优化",
         });
       }
 
@@ -959,7 +975,7 @@ class ScheduleController2 {
         });
       }
     } catch (error) {
-      console.error("优化课表失败:", error);
+      console.error("化课表失败:", error);
       res.status(500).json({
         status: "error",
         message: "优化课表失败",
